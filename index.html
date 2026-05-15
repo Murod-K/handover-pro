@@ -1,0 +1,1849 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Handover Pro — Система передачи смены</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#090c12;
+  --bg2:#0f1520;
+  --card:#131928;
+  --card2:#1a2235;
+  --border:#1e2d47;
+  --border2:#253550;
+  --blue:#3b7eff;
+  --blue2:#2563eb;
+  --blue-glow:rgba(59,126,255,0.15);
+  --cyan:#06b6d4;
+  --green:#10b981;
+  --yellow:#f59e0b;
+  --red:#ef4444;
+  --red-glow:rgba(239,68,68,0.12);
+  --text:#e8edf5;
+  --text2:#8a9bb5;
+  --text3:#4d6080;
+  --font-display:'Syne',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'JetBrains Mono',monospace;
+  --r:12px;
+  --r2:8px;
+  --shadow:0 4px 24px rgba(0,0,0,0.4);
+  --shadow2:0 2px 12px rgba(0,0,0,0.3);
+}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.6;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+body::before{
+  content:'';
+  position:fixed;
+  top:0;left:0;right:0;bottom:0;
+  background:
+    radial-gradient(ellipse 60% 40% at 20% 0%, rgba(59,126,255,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 100%, rgba(6,182,212,0.04) 0%, transparent 50%);
+  pointer-events:none;
+  z-index:0;
+}
+#root{position:relative;z-index:1}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text3)}
+
+/* LAYOUT */
+.layout{display:flex;min-height:100vh}
+.sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--bg2);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;left:0;bottom:0;
+  z-index:100;
+  transition:transform .3s ease;
+}
+.sidebar-logo{
+  padding:24px 20px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{
+  display:flex;align-items:center;gap:10px;
+}
+.logo-icon{
+  width:36px;height:36px;
+  background:linear-gradient(135deg,var(--blue),var(--cyan));
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;
+  box-shadow:0 0 20px rgba(59,126,255,0.3);
+}
+.logo-text{
+  font-family:var(--font-display);
+  font-weight:800;font-size:18px;
+  letter-spacing:-0.5px;
+}
+.logo-text span{color:var(--blue)}
+.logo-sub{font-size:11px;color:var(--text3);margin-top:2px;letter-spacing:.5px;text-transform:uppercase}
+
+.nav{padding:12px 10px;flex:1;overflow-y:auto}
+.nav-section-label{
+  font-size:10px;color:var(--text3);
+  letter-spacing:1px;text-transform:uppercase;
+  padding:16px 10px 6px;
+  font-family:var(--font-mono);
+}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;border-radius:var(--r2);
+  cursor:pointer;
+  color:var(--text2);
+  font-size:14px;font-weight:500;
+  transition:all .15s;
+  position:relative;
+  border:none;background:none;width:100%;text-align:left;
+}
+.nav-item:hover{background:var(--card);color:var(--text)}
+.nav-item.active{
+  background:var(--blue-glow);
+  color:var(--blue);
+  border:1px solid rgba(59,126,255,0.2);
+}
+.nav-item.active::before{
+  content:'';position:absolute;left:0;top:20%;bottom:20%;
+  width:3px;background:var(--blue);border-radius:0 2px 2px 0;
+}
+.nav-icon{font-size:16px;width:20px;text-align:center}
+.nav-badge{
+  margin-left:auto;
+  background:var(--red);
+  color:#fff;font-size:10px;font-weight:700;
+  padding:2px 6px;border-radius:10px;
+  font-family:var(--font-mono);
+}
+
+.sidebar-footer{
+  padding:16px;border-top:1px solid var(--border);
+}
+.sidebar-user{
+  display:flex;align-items:center;gap:10px;
+}
+.user-avatar{
+  width:34px;height:34px;border-radius:50%;
+  background:linear-gradient(135deg,#3b7eff44,#06b6d444);
+  border:1px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;
+}
+.user-info{font-size:12px}
+.user-name{font-weight:600;color:var(--text)}
+.user-role{color:var(--text3)}
+
+.main{margin-left:240px;flex:1;min-height:100vh}
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(9,12,18,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  padding:0 28px;
+  height:60px;display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-title{
+  font-family:var(--font-display);
+  font-weight:700;font-size:18px;
+}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.page{padding:28px;animation:fadeIn .2s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* BUTTONS */
+.btn{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:9px 18px;border-radius:var(--r2);
+  font-family:var(--font-body);font-size:14px;font-weight:600;
+  cursor:pointer;border:none;transition:all .15s;
+  white-space:nowrap;
+}
+.btn-primary{
+  background:var(--blue);color:#fff;
+  box-shadow:0 0 16px rgba(59,126,255,0.3);
+}
+.btn-primary:hover{background:var(--blue2);box-shadow:0 0 24px rgba(59,126,255,0.5)}
+.btn-secondary{
+  background:var(--card2);color:var(--text);
+  border:1px solid var(--border2);
+}
+.btn-secondary:hover{background:var(--card);border-color:var(--blue)}
+.btn-danger{background:rgba(239,68,68,0.15);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+.btn-danger:hover{background:rgba(239,68,68,0.25)}
+.btn-ghost{background:transparent;color:var(--text2);padding:8px}
+.btn-ghost:hover{color:var(--text);background:var(--card)}
+.btn-sm{padding:6px 12px;font-size:13px}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* CARDS */
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:20px;
+}
+.card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;
+}
+.card-title{
+  font-family:var(--font-display);
+  font-weight:700;font-size:16px;
+}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}
+.stat-card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:20px;
+  position:relative;overflow:hidden;
+  transition:border-color .2s;
+}
+.stat-card:hover{border-color:var(--border2)}
+.stat-card::after{
+  content:'';position:absolute;
+  top:0;right:0;width:60px;height:60px;
+  border-radius:0 var(--r) 0 60px;
+  opacity:.08;
+}
+.stat-card.blue::after{background:var(--blue)}
+.stat-card.green::after{background:var(--green)}
+.stat-card.yellow::after{background:var(--yellow)}
+.stat-card.red::after{background:var(--red)}
+.stat-icon{font-size:22px;margin-bottom:10px}
+.stat-val{
+  font-family:var(--font-display);
+  font-size:32px;font-weight:800;
+  line-height:1;margin-bottom:4px;
+}
+.stat-label{font-size:12px;color:var(--text3);text-transform:uppercase;letter-spacing:.5px}
+.stat-change{
+  font-size:12px;margin-top:8px;
+  color:var(--green);font-family:var(--font-mono);
+}
+
+/* TABLE */
+.table-wrap{overflow-x:auto;border-radius:var(--r);border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse}
+thead th{
+  background:var(--bg2);
+  padding:12px 16px;
+  text-align:left;
+  font-size:11px;letter-spacing:.8px;text-transform:uppercase;
+  color:var(--text3);font-family:var(--font-mono);
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+tbody tr{
+  border-bottom:1px solid var(--border);
+  transition:background .1s;
+}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--card2)}
+tbody td{padding:12px 16px;font-size:14px;vertical-align:middle}
+
+/* BADGES */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:20px;
+  font-size:12px;font-weight:600;font-family:var(--font-mono);
+  white-space:nowrap;
+}
+.badge-blue{background:rgba(59,126,255,0.15);color:var(--blue)}
+.badge-green{background:rgba(16,185,129,0.15);color:var(--green)}
+.badge-yellow{background:rgba(245,158,11,0.15);color:var(--yellow)}
+.badge-red{background:rgba(239,68,68,0.15);color:var(--red)}
+.badge-gray{background:rgba(138,155,181,0.1);color:var(--text2)}
+
+/* FORMS */
+.form-group{margin-bottom:16px}
+.form-label{
+  display:block;font-size:12px;font-weight:600;
+  color:var(--text2);margin-bottom:6px;
+  letter-spacing:.3px;text-transform:uppercase;
+}
+.form-input{
+  width:100%;padding:10px 14px;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:var(--r2);
+  color:var(--text);font-family:var(--font-body);font-size:14px;
+  outline:none;transition:border-color .15s;
+}
+.form-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-glow)}
+.form-input::placeholder{color:var(--text3)}
+.form-select{
+  width:100%;padding:10px 14px;
+  background:var(--bg2);
+  border:1px solid var(--border2);
+  border-radius:var(--r2);
+  color:var(--text);font-family:var(--font-body);font-size:14px;
+  outline:none;appearance:none;cursor:pointer;
+}
+.form-select:focus{border-color:var(--blue)}
+.form-textarea{resize:vertical;min-height:80px}
+
+/* TOGGLE BUTTONS */
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap}
+.toggle-btn{
+  padding:8px 14px;border-radius:var(--r2);
+  border:1px solid var(--border2);
+  background:var(--bg2);color:var(--text2);
+  cursor:pointer;font-size:13px;font-weight:500;
+  transition:all .15s;white-space:nowrap;
+}
+.toggle-btn:hover{border-color:var(--blue);color:var(--text)}
+.toggle-btn.active{
+  background:var(--blue-glow);
+  border-color:var(--blue);color:var(--blue);
+  font-weight:600;
+}
+.toggle-btn.active-green{background:rgba(16,185,129,0.12);border-color:var(--green);color:var(--green)}
+.toggle-btn.active-yellow{background:rgba(245,158,11,0.12);border-color:var(--yellow);color:var(--yellow)}
+.toggle-btn.active-red{background:rgba(239,68,68,0.12);border-color:var(--red);color:var(--red)}
+
+/* WIZARD */
+.wizard-steps{display:flex;gap:0;margin-bottom:28px;position:relative}
+.wizard-steps::before{
+  content:'';position:absolute;
+  top:16px;left:16px;right:16px;height:2px;
+  background:var(--border);z-index:0;
+}
+.wizard-step{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  gap:8px;position:relative;z-index:1;cursor:pointer;
+}
+.step-circle{
+  width:32px;height:32px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;font-family:var(--font-mono);
+  border:2px solid var(--border);
+  background:var(--bg2);
+  transition:all .2s;
+}
+.wizard-step.done .step-circle{background:var(--green);border-color:var(--green);color:#fff}
+.wizard-step.active .step-circle{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 12px rgba(59,126,255,0.4)}
+.step-label{font-size:11px;color:var(--text3);text-align:center;letter-spacing:.3px}
+.wizard-step.active .step-label{color:var(--blue)}
+.wizard-step.done .step-label{color:var(--green)}
+
+/* ALERTS */
+.alert{
+  padding:12px 16px;border-radius:var(--r2);
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:12px;font-size:14px;
+}
+.alert-yellow{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);color:var(--yellow)}
+.alert-red{background:var(--red-glow);border:1px solid rgba(239,68,68,0.25);color:var(--red)}
+.alert-green{background:rgba(16,185,129,0.1);border:1px solid rgba(16,185,129,0.25);color:var(--green)}
+.alert-blue{background:var(--blue-glow);border:1px solid rgba(59,126,255,0.25);color:var(--blue)}
+
+/* TOAST */
+.toast-container{
+  position:fixed;bottom:24px;right:24px;
+  display:flex;flex-direction:column;gap:10px;
+  z-index:9999;
+}
+.toast{
+  background:var(--card2);
+  border:1px solid var(--border2);
+  border-radius:var(--r2);
+  padding:12px 18px;
+  font-size:14px;font-weight:500;
+  box-shadow:var(--shadow);
+  animation:toastIn .25s ease;
+  display:flex;align-items:center;gap:10px;
+  min-width:280px;
+}
+.toast.success{border-color:rgba(16,185,129,0.3);border-left:3px solid var(--green)}
+.toast.error{border-color:rgba(239,68,68,0.3);border-left:3px solid var(--red)}
+.toast.warning{border-color:rgba(245,158,11,0.3);border-left:3px solid var(--yellow)}
+@keyframes toastIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+
+/* MODAL */
+.modal-overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
+  z-index:500;display:flex;align-items:center;justify-content:center;
+  padding:20px;animation:fadeOverlay .15s ease;
+}
+@keyframes fadeOverlay{from{opacity:0}to{opacity:1}}
+.modal{
+  background:var(--card);
+  border:1px solid var(--border2);
+  border-radius:var(--r);
+  width:100%;max-width:560px;
+  max-height:90vh;overflow-y:auto;
+  box-shadow:0 24px 80px rgba(0,0,0,0.6);
+  animation:modalIn .2s ease;
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.96)}to{opacity:1;transform:scale(1)}}
+.modal-header{
+  padding:20px 24px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.modal-title{font-family:var(--font-display);font-weight:700;font-size:18px}
+.modal-body{padding:24px}
+.modal-footer{
+  padding:16px 24px;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:flex-end;gap:10px;
+}
+
+/* CONSTRUCTION CARD */
+.construction-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  padding:16px;
+  margin-bottom:12px;
+  transition:border-color .15s;
+}
+.construction-card:hover{border-color:var(--border2)}
+.construction-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;
+}
+
+/* PRINT REPORT */
+.report-preview{
+  background:#fff;color:#1a1a2e;
+  border-radius:var(--r);
+  overflow:hidden;
+  font-family:'DM Sans',sans-serif;
+}
+
+/* SECTION DIVIDER */
+.section-divider{
+  display:flex;align-items:center;gap:12px;
+  margin:24px 0 16px;
+}
+.section-divider-line{flex:1;height:1px;background:var(--border)}
+.section-divider-text{
+  font-size:11px;color:var(--text3);
+  text-transform:uppercase;letter-spacing:1px;
+  font-family:var(--font-mono);white-space:nowrap;
+}
+
+/* CHECKBOX */
+.checkbox-group{display:flex;flex-direction:column;gap:8px}
+.checkbox-item{
+  display:flex;align-items:center;gap:10px;
+  cursor:pointer;padding:8px 12px;
+  border-radius:var(--r2);border:1px solid var(--border);
+  transition:all .15s;
+}
+.checkbox-item:hover{border-color:var(--border2);background:var(--card2)}
+.checkbox-item.checked{
+  border-color:rgba(239,68,68,0.3);
+  background:rgba(239,68,68,0.05);
+}
+.checkbox-item input{display:none}
+.check-visual{
+  width:18px;height:18px;border-radius:4px;
+  border:2px solid var(--border2);
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;transition:all .15s;
+}
+.checkbox-item.checked .check-visual{
+  background:var(--red);border-color:var(--red);
+}
+
+/* PROGRESS */
+.progress-bar{
+  height:4px;background:var(--border);
+  border-radius:2px;overflow:hidden;
+}
+.progress-fill{
+  height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));
+  border-radius:2px;transition:width .4s ease;
+}
+
+/* FILTERS */
+.filter-bar{
+  display:flex;gap:10px;flex-wrap:wrap;
+  margin-bottom:16px;
+}
+
+/* EMPTY STATE */
+.empty-state{
+  text-align:center;padding:60px 20px;
+  color:var(--text3);
+}
+.empty-icon{font-size:48px;margin-bottom:16px;opacity:.5}
+.empty-title{font-family:var(--font-display);font-size:18px;font-weight:700;color:var(--text2);margin-bottom:8px}
+
+/* DIVIDER */
+hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+
+/* MOBILE */
+.mobile-header{
+  display:none;
+  position:fixed;top:0;left:0;right:0;
+  height:56px;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  z-index:200;align-items:center;padding:0 16px;justify-content:space-between;
+}
+.hamburger{
+  background:none;border:none;cursor:pointer;
+  color:var(--text);font-size:20px;padding:6px;
+}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0}
+  .mobile-header{display:flex}
+  .topbar{display:none}
+  .page{padding:16px;padding-top:72px}
+  .stat-grid{grid-template-columns:1fr 1fr}
+  .wizard-step .step-label{display:none}
+  .modal{max-width:100%}
+  .toast-container{left:16px;right:16px;bottom:16px}
+  .toast{min-width:unset}
+}
+
+/* GRID UTILITIES */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+@media(max-width:600px){.grid-2,.grid-3{grid-template-columns:1fr}}
+
+.flex{display:flex}.gap-8{gap:8px}.gap-12{gap:12px}.gap-16{gap:16px}
+.items-center{align-items:center}.justify-between{justify-content:space-between}
+.flex-1{flex:1}.flex-wrap{flex-wrap:wrap}
+.mb-8{margin-bottom:8px}.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}.mb-24{margin-bottom:24px}
+.mt-8{margin-top:8px}.mt-16{margin-top:16px}.mt-24{margin-top:24px}
+.text-sm{font-size:13px}.text-xs{font-size:11px}.text-lg{font-size:18px}
+.text-muted{color:var(--text2)}.text-dim{color:var(--text3)}
+.font-bold{font-weight:700}.font-mono{font-family:var(--font-mono)}
+.text-blue{color:var(--blue)}.text-green{color:var(--green)}.text-yellow{color:var(--yellow)}.text-red{color:var(--red)}
+.truncate{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.w-full{width:100%}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useCallback,useRef,useMemo,createContext,useContext}=React;
+
+// ═══════════════════════════════════════
+// DEFAULTS
+// ═══════════════════════════════════════
+const DEFAULT_REFS={
+  objects:[
+    {id:'obj1',name:'ЖК Резиденция Центр',address:'ул. Навои, 14'},
+    {id:'obj2',name:'БЦ Башня Ташкент',address:'пр. Амира Темура, 107'},
+    {id:'obj3',name:'Мост через Чирчик',address:'Сергели р-н'},
+  ],
+  blocks:[
+    {id:'bl1',objectId:'obj1',name:'Секция А, пр. 1-3'},
+    {id:'bl2',objectId:'obj1',name:'Секция Б, подвал'},
+    {id:'bl3',objectId:'obj2',name:'Корпус 1, ур. 5-9'},
+    {id:'bl4',objectId:'obj3',name:'Пролёт 2-4'},
+  ],
+  structTypes:[
+    {id:'st1',name:'Колонна',emoji:'🏛'},
+    {id:'st2',name:'Стена',emoji:'🧱'},
+    {id:'st3',name:'Плита',emoji:'⬛'},
+    {id:'st4',name:'Балка',emoji:'━'},
+    {id:'st5',name:'Фундамент',emoji:'🏗'},
+    {id:'st6',name:'Лестница',emoji:'🪜'},
+    {id:'st7',name:'Ригель',emoji:'🔩'},
+    {id:'st8',name:'Перемычка',emoji:'▬'},
+  ],
+  defects:[
+    {id:'d1',name:'Шаг арматуры'},
+    {id:'d2',name:'Защитный слой'},
+    {id:'d3',name:'Стыковка'},
+    {id:'d4',name:'Отсутствие арматуры'},
+    {id:'d5',name:'Диаметр'},
+    {id:'d6',name:'Анкеровка'},
+    {id:'d7',name:'Чистота поверхности'},
+  ],
+  deliveryMethods:[
+    {id:'dm1',name:'Насос 🚛',requiresPump:true},
+    {id:'dm2',name:'Кран+ковш 🏗',requiresPump:false},
+    {id:'dm3',name:'Вручную 👷',requiresPump:false},
+    {id:'dm4',name:'Лоток',requiresPump:false},
+  ],
+  pumpTypes:[
+    {id:'p1',name:'Стационарный'},
+    {id:'p2',name:'Автобетононасос'},
+    {id:'p3',name:'Прицепной'},
+  ],
+  engineers:[
+    {id:'e1',name:'Расулов А.Б.',role:'ГИП'},
+    {id:'e2',name:'Юсупова З.М.',role:'Инженер'},
+    {id:'e3',name:'Каримов О.Р.',role:'Прораб'},
+  ]
+};
+
+const SHIFT_TYPES=['День','Ночь'];
+
+// ═══════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════
+function useLS(key,def){
+  const[v,setV]=useState(()=>{
+    try{const s=localStorage.getItem(key);return s?JSON.parse(s):def}
+    catch{return def}
+  });
+  const set=useCallback(val=>{
+    const next=typeof val==='function'?val(v):val;
+    setV(next);
+    try{localStorage.setItem(key,JSON.stringify(next))}catch(e){}
+  },[key,v]);
+  return[v,set];
+}
+
+// ═══════════════════════════════════════
+// CONTEXT
+// ═══════════════════════════════════════
+const AppCtx=createContext(null);
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function uid(){return Math.random().toString(36).slice(2,10)}
+function fmt(d){return new Date(d).toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'})}
+function fmtDT(d){return new Date(d).toLocaleString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+function fmtDate(d){return new Date(d).toISOString().slice(0,10)}
+
+// ═══════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════
+function ToastContainer({toasts}){
+  return <div className="toast-container">
+    {toasts.map(t=>(
+      <div key={t.id} className={`toast ${t.type||''}`}>
+        <span>{t.type==='success'?'✅':t.type==='error'?'❌':t.type==='warning'?'⚠️':'ℹ️'}</span>
+        {t.msg}
+      </div>
+    ))}
+  </div>
+}
+
+// ═══════════════════════════════════════
+// CONFIRM MODAL
+// ═══════════════════════════════════════
+function ConfirmModal({title,text,onConfirm,onCancel}){
+  return <div className="modal-overlay" onClick={onCancel}>
+    <div className="modal" style={{maxWidth:400}} onClick={e=>e.stopPropagation()}>
+      <div className="modal-header">
+        <span className="modal-title">{title||'Подтверждение'}</span>
+        <button className="btn btn-ghost" onClick={onCancel}>✕</button>
+      </div>
+      <div className="modal-body">{text||'Вы уверены?'}</div>
+      <div className="modal-footer">
+        <button className="btn btn-secondary" onClick={onCancel}>Отмена</button>
+        <button className="btn btn-danger" onClick={onConfirm}>Удалить</button>
+      </div>
+    </div>
+  </div>
+}
+
+// ═══════════════════════════════════════
+// CONSTRUCTION WARNINGS
+// ═══════════════════════════════════════
+function getWarnings(c){
+  const w=[];
+  if(c.beton?.willPour){
+    if(c.natura!=='Дана')w.push(`[${c.label}] Натура не дана — заливка запланирована`);
+    if(c.armature==='Не сдана')w.push(`[${c.label}] Арматура не сдана — заливка запланирована`);
+    if(!c.beton.ordered)w.push(`[${c.label}] Бетон не заказан — заливка запланирована`);
+    if(!c.beton.shuttering)w.push(`[${c.label}] Опалубка не готова — заливка запланирована`);
+  }
+  return w;
+}
+
+// ═══════════════════════════════════════
+// REPORT HTML GENERATOR
+// ═══════════════════════════════════════
+function generateReport(shift,refs){
+  const obj=refs.objects.find(o=>o.id===shift.objectId)||{name:'—'};
+  const blk=refs.blocks.find(b=>b.id===shift.blockId)||{name:'—'};
+  const eng=refs.engineers.find(e=>e.id===shift.engineerId)||{name:'—',role:'—'};
+  const allWarnings=shift.constructions.flatMap(c=>getWarnings(c));
+  const totalVol=shift.constructions.reduce((s,c)=>s+(c.beton?.volume||0),0);
+
+  const rows=shift.constructions.map(c=>{
+    const st=refs.structTypes.find(s=>s.id===c.typeId)||{name:'—',emoji:''};
+    const dm=refs.deliveryMethods.find(d=>d.id===c.beton?.deliveryMethodId)||null;
+    const pt=refs.pumpTypes.find(p=>p.id===c.beton?.pumpTypeId)||null;
+    return `<tr>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-weight:600">${st.emoji} ${st.name}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;font-family:monospace">${c.label||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb">${c.natura||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb">${c.armature||'—'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb">${c.beton?.willPour?(c.beton.volume+' м³'+(dm?' / '+dm.name:'')+(pt?' / '+pt.name:'')):'Нет'}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #e5e7eb;color:#6b7280">${c.comment||'—'}</td>
+    </tr>`;
+  }).join('');
+
+  const warnHtml=allWarnings.length?`
+    <div style="background:#fffbeb;border:1px solid #fbbf24;border-radius:8px;padding:16px;margin-bottom:24px">
+      <h3 style="color:#d97706;font-size:15px;margin-bottom:10px">⚠️ Предупреждения (${allWarnings.length})</h3>
+      <ul style="padding-left:20px;color:#92400e">
+        ${allWarnings.map(w=>`<li style="margin-bottom:4px">${w}</li>`).join('')}
+      </ul>
+    </div>`:'';
+
+  return `<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Отчёт смены — ${obj.name} — ${fmt(shift.createdAt)}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;color:#1a1a2e;background:#f8fafc;padding:40px 0}
+.page{max-width:900px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 4px 32px rgba(0,0,0,0.12);overflow:hidden}
+.header{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#fff;padding:32px 40px}
+.logo{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.7;margin-bottom:8px}
+.title{font-size:24px;font-weight:700;margin-bottom:24px}
+.meta-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.meta-item label{font-size:10px;text-transform:uppercase;letter-spacing:1px;opacity:.6;display:block}
+.meta-item span{font-size:15px;font-weight:600}
+.body{padding:32px 40px}
+table{width:100%;border-collapse:collapse;margin-bottom:24px;font-size:14px}
+thead th{background:#f1f5f9;padding:10px 14px;text-align:left;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:#64748b;border-bottom:2px solid #e2e8f0}
+tbody tr:last-child td{border-bottom:none}
+.total-row td{background:#f8fafc;font-weight:700;padding:12px 14px;border-top:2px solid #e2e8f0}
+.footer{background:#f1f5f9;padding:20px 40px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e2e8f0}
+.footer-sign{text-align:center}
+.sign-line{width:120px;border-bottom:1px solid #94a3b8;margin:0 auto 4px}
+.sign-label{font-size:11px;color:#64748b}
+@media print{
+  body{background:#fff;padding:0}
+  .page{box-shadow:none;border-radius:0;max-width:100%}
+  .no-print{display:none!important}
+}
+</style>
+</head>
+<body>
+<div style="text-align:center;margin-bottom:20px" class="no-print">
+  <button onclick="window.print()" style="background:#1d4ed8;color:#fff;border:none;padding:10px 24px;border-radius:8px;font-size:15px;cursor:pointer;margin-right:10px">🖨️ Печать / PDF</button>
+  <button onclick="window.close()" style="background:#e2e8f0;color:#1e293b;border:none;padding:10px 24px;border-radius:8px;font-size:15px;cursor:pointer">✕ Закрыть</button>
+</div>
+<div class="page">
+  <div class="header">
+    <div class="logo">Handover Pro — Система передачи смены</div>
+    <h1 class="title">Акт передачи смены</h1>
+    <div class="meta-grid">
+      <div class="meta-item"><label>Объект</label><span>${obj.name}</span></div>
+      <div class="meta-item"><label>Блок / секция</label><span>${blk.name}</span></div>
+      <div class="meta-item"><label>Тип смены</label><span>${shift.shiftType||'—'}</span></div>
+      <div class="meta-item"><label>Дата и время</label><span>${fmtDT(shift.createdAt)}</span></div>
+      <div class="meta-item"><label>Инженер</label><span>${eng.name}</span></div>
+      <div class="meta-item"><label>Должность</label><span>${eng.role}</span></div>
+    </div>
+  </div>
+  <div class="body">
+    ${warnHtml}
+    <h2 style="font-size:16px;margin-bottom:14px;color:#1e293b">📋 Конструкции (${shift.constructions.length})</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Тип</th><th>Маркировка</th><th>Натура</th><th>Арматура</th><th>Бетон</th><th>Комментарий</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        <tr class="total-row">
+          <td colspan="4">Итого по смене:</td>
+          <td>${totalVol} м³</td>
+          <td>${shift.constructions.length} конструкций</td>
+        </tr>
+      </tbody>
+    </table>
+    ${shift.notes?`<div style="background:#f8fafc;border-left:3px solid #3b82f6;padding:12px 16px;border-radius:0 8px 8px 0;margin-top:16px"><strong>Общие замечания:</strong><br/>${shift.notes}</div>`:''}
+  </div>
+  <div class="footer">
+    <div class="footer-sign">
+      <div class="sign-line"></div>
+      <div class="sign-label">Сдал смену</div>
+    </div>
+    <div style="font-size:12px;color:#94a3b8;text-align:center">Сформировано: ${fmtDT(Date.now())}<br/>Handover Pro</div>
+    <div class="footer-sign">
+      <div class="sign-line"></div>
+      <div class="sign-label">Принял смену</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
+// ═══════════════════════════════════════
+// CONSTRUCTION FORM (Step 2 subcomponent)
+// ═══════════════════════════════════════
+function ConstructionForm({refs,initial,onSave,onCancel}){
+  const empty={typeId:'',label:'',natura:'Дана',armature:'Сдана',defects:[],beton:{willPour:false,ordered:false,deliveryMethodId:'',pumpTypeId:'',pumpLogistics:'',volume:0,shuttering:false,waterproofing:false,armatureReady:false},comment:''};
+  const[c,setC]=useState(initial||empty);
+  const upd=k=>v=>setC(p=>({...p,[k]:typeof v==='function'?v(p[k]):v}));
+  const updBeton=k=>v=>setC(p=>({...p,beton:{...p.beton,[k]:typeof v==='function'?v(p.beton[k]):v}}));
+  const selType=refs.structTypes.find(s=>s.id===c.typeId);
+  const selDM=refs.deliveryMethods.find(d=>d.id===c.beton.deliveryMethodId);
+  const warns=c.label?getWarnings(c):[];
+  const valid=c.typeId&&c.label;
+
+  return <div>
+    <div className="form-group">
+      <label className="form-label">Тип конструкции *</label>
+      <div className="toggle-group">
+        {refs.structTypes.map(s=>(
+          <button key={s.id} className={`toggle-btn${c.typeId===s.id?' active':''}`} onClick={()=>upd('typeId')(s.id)}>
+            {s.emoji} {s.name}
+          </button>
+        ))}
+      </div>
+    </div>
+    <div className="form-group">
+      <label className="form-label">Маркировка *</label>
+      <input className="form-input" placeholder="например: К-1, Ст-14, Пл-3" value={c.label} onChange={e=>upd('label')(e.target.value)}/>
+    </div>
+
+    <div className="section-divider"><div className="section-divider-line"/><span className="section-divider-text">НАТУРА</span><div className="section-divider-line"/></div>
+    <div className="form-group">
+      <div className="toggle-group">
+        {['Дана','Не дана','Будет ночью'].map(opt=>{
+          const cls=opt==='Дана'?'active-green':opt==='Будет ночью'?'active-yellow':'active-red';
+          return <button key={opt} className={`toggle-btn${c.natura===opt?' '+cls:''}`} onClick={()=>upd('natura')(opt)}>{opt}</button>
+        })}
+      </div>
+    </div>
+
+    <div className="section-divider"><div className="section-divider-line"/><span className="section-divider-text">АРМАТУРА</span><div className="section-divider-line"/></div>
+    <div className="form-group">
+      <div className="toggle-group">
+        {['Сдана','Частично','Не сдана'].map(opt=>{
+          const cls=opt==='Сдана'?'active-green':opt==='Частично'?'active-yellow':'active-red';
+          return <button key={opt} className={`toggle-btn${c.armature===opt?' '+cls:''}`} onClick={()=>upd('armature')(opt)}>{opt}</button>
+        })}
+      </div>
+    </div>
+    {(c.armature==='Не сдана'||c.armature==='Частично')&&(
+      <div className="form-group">
+        <label className="form-label">Дефекты арматуры</label>
+        <div className="checkbox-group">
+          {refs.defects.map(d=>{
+            const checked=c.defects.includes(d.id);
+            return <label key={d.id} className={`checkbox-item${checked?' checked':''}`}>
+              <input type="checkbox" checked={checked} onChange={()=>upd('defects')(p=>checked?p.filter(x=>x!==d.id):[...p,d.id])}/>
+              <div className="check-visual">{checked&&'✓'}</div>
+              <span style={{fontSize:14}}>{d.name}</span>
+            </label>
+          })}
+        </div>
+      </div>
+    )}
+
+    <div className="section-divider"><div className="section-divider-line"/><span className="section-divider-text">БЕТОН</span><div className="section-divider-line"/></div>
+    <div className="form-group">
+      <div className="toggle-group">
+        <button className={`toggle-btn${c.beton.willPour?' active-blue active':''}`} onClick={()=>updBeton('willPour')(true)}>🏗 Будет заливка</button>
+        <button className={`toggle-btn${!c.beton.willPour?' active-red active-red':''}`} onClick={()=>updBeton('willPour')(false)}>✕ Заливки нет</button>
+      </div>
+    </div>
+    {c.beton.willPour&&<>
+      <div className="grid-2">
+        <div className="form-group">
+          <label className="form-label">Бетон заказан?</label>
+          <div className="toggle-group">
+            <button className={`toggle-btn${c.beton.ordered?' active-green':''}`} onClick={()=>updBeton('ordered')(true)}>✅ Да</button>
+            <button className={`toggle-btn${!c.beton.ordered?' active-red':''}`} onClick={()=>updBeton('ordered')(false)}>❌ Нет</button>
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Объём, м³ *</label>
+          <input className="form-input" type="number" min="0" step="0.5" value={c.beton.volume||''} onChange={e=>updBeton('volume')(parseFloat(e.target.value)||0)}/>
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Способ подачи</label>
+        <div className="toggle-group">
+          {refs.deliveryMethods.map(dm=>(
+            <button key={dm.id} className={`toggle-btn${c.beton.deliveryMethodId===dm.id?' active':''}`} onClick={()=>{updBeton('deliveryMethodId')(dm.id);if(!dm.requiresPump)updBeton('pumpTypeId')('')}}>
+              {dm.name}
+            </button>
+          ))}
+        </div>
+      </div>
+      {selDM?.requiresPump&&<>
+        <div className="form-group">
+          <label className="form-label">Тип насоса</label>
+          <div className="toggle-group">
+            {refs.pumpTypes.map(p=>(
+              <button key={p.id} className={`toggle-btn${c.beton.pumpTypeId===p.id?' active':''}`} onClick={()=>updBeton('pumpTypeId')(p.id)}>{p.name}</button>
+            ))}
+          </div>
+        </div>
+        <div className="form-group">
+          <label className="form-label">Логистика насоса</label>
+          <input className="form-input" placeholder="например: прибывает в 18:00" value={c.beton.pumpLogistics} onChange={e=>updBeton('pumpLogistics')(e.target.value)}/>
+        </div>
+      </>}
+      <div className="form-group">
+        <label className="form-label">Готовность к заливке</label>
+        <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+          {[['shuttering','Опалубка'],['waterproofing','Гидроизоляция'],['armatureReady','Арматура']].map(([k,lbl])=>(
+            <label key={k} className={`checkbox-item${c.beton[k]?' checked':''}`} style={{minWidth:140}}>
+              <input type="checkbox" checked={!!c.beton[k]} onChange={()=>updBeton(k)(!c.beton[k])}/>
+              <div className="check-visual" style={{borderColor:c.beton[k]?'var(--green)':'',background:c.beton[k]?'var(--green)':''}}>{c.beton[k]&&'✓'}</div>
+              <span style={{fontSize:13}}>{lbl}</span>
+            </label>
+          ))}
+        </div>
+      </div>
+    </>}
+
+    <div className="form-group">
+      <label className="form-label">Комментарий</label>
+      <textarea className="form-input form-textarea" placeholder="Замечания, особые условия..." value={c.comment} onChange={e=>upd('comment')(e.target.value)}/>
+    </div>
+
+    {warns.length>0&&<div className="alert alert-yellow mb-12">
+      <span>⚠️</span>
+      <div>{warns.map((w,i)=><div key={i}>{w}</div>)}</div>
+    </div>}
+
+    <div style={{display:'flex',gap:10,justifyContent:'flex-end'}}>
+      <button className="btn btn-secondary" onClick={onCancel}>Отмена</button>
+      <button className="btn btn-primary" disabled={!valid} onClick={()=>onSave(c)}>
+        {initial?'Сохранить изменения':'➕ Добавить конструкцию'}
+      </button>
+    </div>
+  </div>
+}
+
+// ═══════════════════════════════════════
+// WIZARD STEPS
+// ═══════════════════════════════════════
+const STEP_LABELS=['Объект','Конструкции','Сводка','Отчёт'];
+
+function Step1({data,setData,refs}){
+  const blocks=refs.blocks.filter(b=>b.objectId===data.objectId);
+  return <div>
+    <div className="form-group">
+      <label className="form-label">Объект строительства</label>
+      <div style={{display:'flex',flexDirection:'column',gap:8}}>
+        {refs.objects.map(o=>(
+          <button key={o.id} onClick={()=>setData(p=>({...p,objectId:o.id,blockId:''}))}
+            style={{padding:'12px 16px',border:`1px solid ${data.objectId===o.id?'var(--blue)':'var(--border2)'}`,borderRadius:'var(--r2)',background:data.objectId===o.id?'var(--blue-glow)':'var(--bg2)',color:data.objectId===o.id?'var(--blue)':'var(--text)',cursor:'pointer',textAlign:'left',transition:'all .15s'}}>
+            <div style={{fontWeight:600}}>{o.name}</div>
+            <div style={{fontSize:12,opacity:.6,marginTop:2}}>{o.address}</div>
+          </button>
+        ))}
+      </div>
+    </div>
+    {data.objectId&&<div className="form-group">
+      <label className="form-label">Блок / Секция</label>
+      <div className="toggle-group">
+        {blocks.map(b=>(
+          <button key={b.id} className={`toggle-btn${data.blockId===b.id?' active':''}`} onClick={()=>setData(p=>({...p,blockId:b.id}))}>
+            {b.name}
+          </button>
+        ))}
+        {blocks.length===0&&<span style={{color:'var(--text3)',fontSize:13}}>Нет блоков для этого объекта</span>}
+      </div>
+    </div>}
+    <div className="grid-2">
+      <div className="form-group">
+        <label className="form-label">Тип смены</label>
+        <div className="toggle-group">
+          {SHIFT_TYPES.map(t=>(
+            <button key={t} className={`toggle-btn${data.shiftType===t?' active':''}`} onClick={()=>setData(p=>({...p,shiftType:t}))}>
+              {t==='День'?'☀️':'🌙'} {t}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="form-group">
+        <label className="form-label">Инженер</label>
+        <select className="form-select" value={data.engineerId} onChange={e=>setData(p=>({...p,engineerId:e.target.value}))}>
+          <option value="">— Выбрать —</option>
+          {refs.engineers.map(e=><option key={e.id} value={e.id}>{e.name} ({e.role})</option>)}
+        </select>
+      </div>
+    </div>
+    <div className="form-group">
+      <label className="form-label">Общие замечания по смене</label>
+      <textarea className="form-input form-textarea" placeholder="Комментарии к смене в целом..." value={data.notes||''} onChange={e=>setData(p=>({...p,notes:e.target.value}))}/>
+    </div>
+  </div>
+}
+
+function Step2({refs,constructions,setConstructions,toast}){
+  const[showForm,setShowForm]=useState(false);
+  const[editing,setEditing]=useState(null);
+
+  const handleSave=c=>{
+    if(editing!==null){
+      setConstructions(p=>p.map((x,i)=>i===editing?{...c,id:x.id}:x));
+      setEditing(null);
+    } else {
+      setConstructions(p=>[...p,{...c,id:uid()}]);
+    }
+    setShowForm(false);
+    toast('Конструкция добавлена','success');
+  };
+  const handleEdit=i=>{setEditing(i);setShowForm(true)};
+  const handleDel=i=>{setConstructions(p=>p.filter((_,j)=>j!==i));toast('Конструкция удалена','warning')};
+  const initial=editing!==null?constructions[editing]:null;
+
+  return <div>
+    {constructions.length>0&&<>
+      {constructions.map((c,i)=>{
+        const st=refs.structTypes.find(s=>s.id===c.typeId)||{name:'?',emoji:'?'};
+        const warns=getWarnings(c);
+        return <div key={c.id} className="construction-card">
+          <div className="construction-card-header">
+            <div style={{display:'flex',alignItems:'center',gap:10}}>
+              <span style={{fontSize:20}}>{st.emoji}</span>
+              <div>
+                <div style={{fontWeight:700}}>{st.name} <span style={{fontFamily:'var(--font-mono)',color:'var(--cyan)'}}>{c.label}</span></div>
+                <div style={{fontSize:12,color:'var(--text3)'}}>
+                  Натура: <span style={{color:c.natura==='Дана'?'var(--green)':c.natura==='Будет ночью'?'var(--yellow)':'var(--red)'}}>{c.natura}</span>
+                  {' · '}Арм: <span style={{color:c.armature==='Сдана'?'var(--green)':c.armature==='Частично'?'var(--yellow)':'var(--red)'}}>{c.armature}</span>
+                  {' · '}Бетон: <span style={{color:c.beton?.willPour?'var(--cyan)':'var(--text3)'}}>{c.beton?.willPour?(c.beton.volume+' м³'):'Нет'}</span>
+                </div>
+              </div>
+            </div>
+            <div style={{display:'flex',gap:6}}>
+              {warns.length>0&&<span className="badge badge-yellow">⚠️ {warns.length}</span>}
+              <button className="btn btn-ghost btn-sm" onClick={()=>handleEdit(i)}>✏️</button>
+              <button className="btn btn-ghost btn-sm" onClick={()=>handleDel(i)}>🗑️</button>
+            </div>
+          </div>
+          {warns.length>0&&warns.map((w,j)=>(
+            <div key={j} className="alert alert-yellow" style={{padding:'8px 12px',marginBottom:4,fontSize:13}}>
+              <span>⚠️</span>{w}
+            </div>
+          ))}
+        </div>
+      })}
+      <div style={{marginBottom:16}}/>
+    </>}
+
+    {showForm?<div className="card">
+      <div className="card-header">
+        <span className="card-title">{editing!==null?'✏️ Редактировать':'➕ Добавить конструкцию'}</span>
+        <button className="btn btn-ghost" onClick={()=>{setShowForm(false);setEditing(null)}}>✕</button>
+      </div>
+      <ConstructionForm refs={refs} initial={initial} onSave={handleSave} onCancel={()=>{setShowForm(false);setEditing(null)}}/>
+    </div>
+    :<button className="btn btn-secondary w-full" style={{padding:'14px',border:'1px dashed var(--border2)'}} onClick={()=>{setShowForm(true);setEditing(null)}}>
+      ➕ Добавить конструкцию
+    </button>}
+  </div>
+}
+
+function Step3({data,refs,constructions}){
+  const obj=refs.objects.find(o=>o.id===data.objectId)||{name:'—'};
+  const blk=refs.blocks.find(b=>b.id===data.blockId)||{name:'—'};
+  const eng=refs.engineers.find(e=>e.id===data.engineerId)||{name:'—'};
+  const allWarns=constructions.flatMap(c=>getWarnings(c));
+  const totalVol=constructions.reduce((s,c)=>s+(c.beton?.willPour?c.beton.volume:0),0);
+
+  return <div>
+    <div className="card mb-16">
+      <div className="card-header"><span className="card-title">📋 Сводка смены</span></div>
+      <div className="grid-2">
+        <div><div className="text-dim text-xs mb-8">ОБЪЕКТ</div><div style={{fontWeight:600}}>{obj.name}</div></div>
+        <div><div className="text-dim text-xs mb-8">БЛОК</div><div style={{fontWeight:600}}>{blk.name}</div></div>
+        <div><div className="text-dim text-xs mb-8">ТИП СМЕНЫ</div><div>{data.shiftType==='День'?'☀️':'🌙'} {data.shiftType}</div></div>
+        <div><div className="text-dim text-xs mb-8">ИНЖЕНЕР</div><div>{eng.name}</div></div>
+        <div><div className="text-dim text-xs mb-8">КОНСТРУКЦИЙ</div><div style={{fontFamily:'var(--font-mono)',fontSize:20,fontWeight:700,color:'var(--blue)'}}>{constructions.length}</div></div>
+        <div><div className="text-dim text-xs mb-8">ОБЪЁМ БЕТОНА</div><div style={{fontFamily:'var(--font-mono)',fontSize:20,fontWeight:700,color:'var(--cyan)'}}>{totalVol} м³</div></div>
+      </div>
+    </div>
+    {allWarns.length>0&&<div className="card mb-16" style={{borderColor:'rgba(245,158,11,.2)'}}>
+      <div className="card-header">
+        <span className="card-title text-yellow">⚠️ Предупреждения ({allWarns.length})</span>
+      </div>
+      {allWarns.map((w,i)=><div key={i} className="alert alert-yellow" style={{marginBottom:6}}><span>⚠️</span>{w}</div>)}
+    </div>}
+    {allWarns.length===0&&<div className="alert alert-green mb-16"><span>✅</span><strong>Нарушений не выявлено.</strong> Смена готова к оформлению.</div>}
+    <div>
+      {constructions.map((c,i)=>{
+        const st=refs.structTypes.find(s=>s.id===c.typeId)||{name:'?',emoji:'?'};
+        const w=getWarnings(c);
+        return <div key={i} className="construction-card">
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+            <span style={{fontWeight:700}}>{st.emoji} {st.name} <span style={{fontFamily:'var(--font-mono)',color:'var(--cyan)'}}>{c.label}</span></span>
+            <div style={{display:'flex',gap:6}}>
+              <span className={`badge badge-${c.natura==='Дана'?'green':c.natura==='Будет ночью'?'yellow':'red'}`}>{c.natura}</span>
+              <span className={`badge badge-${c.armature==='Сдана'?'green':c.armature==='Частично'?'yellow':'red'}`}>{c.armature}</span>
+              {c.beton?.willPour&&<span className="badge badge-blue">{c.beton.volume} м³</span>}
+              {w.length>0&&<span className="badge badge-yellow">⚠️ {w.length}</span>}
+            </div>
+          </div>
+          {c.comment&&<div style={{fontSize:13,color:'var(--text2)',marginTop:6}}>💬 {c.comment}</div>}
+        </div>
+      })}
+    </div>
+  </div>
+}
+
+function Step4({shift,refs}){
+  const reportHtml=useMemo(()=>generateReport(shift,refs),[shift,refs]);
+  const openReport=()=>{
+    const win=window.open('','_blank');
+    win.document.write(reportHtml);
+    win.document.close();
+  };
+  const downloadReport=()=>{
+    const blob=new Blob([reportHtml],{type:'text/html'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`smena-${fmtDate(shift.createdAt)}.html`;a.click();
+    URL.revokeObjectURL(url);
+  };
+  const obj=refs.objects.find(o=>o.id===shift.objectId)||{name:'—'};
+  const allWarns=shift.constructions.flatMap(c=>getWarnings(c));
+  const totalVol=shift.constructions.reduce((s,c)=>s+(c.beton?.willPour?c.beton.volume:0),0);
+
+  return <div>
+    <div className="alert alert-green mb-16">
+      <span>🎉</span>
+      <div><strong>Смена успешно сохранена!</strong><br/>
+      <span style={{fontSize:13}}>{obj.name} · {shift.constructions.length} конструкций · {totalVol} м³ бетона</span>
+      </div>
+    </div>
+    {allWarns.length>0&&<div className="alert alert-yellow mb-16">
+      <span>⚠️</span>
+      <div><strong>{allWarns.length} предупреждений в отчёте</strong></div>
+    </div>}
+    <div style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:24}}>
+      <button className="btn btn-primary" onClick={openReport}>🖨️ Открыть отчёт / Печать</button>
+      <button className="btn btn-secondary" onClick={downloadReport}>⬇️ Скачать HTML</button>
+    </div>
+    <div className="card">
+      <div style={{fontSize:13,color:'var(--text3)',marginBottom:12}}>Предпросмотр отчёта</div>
+      <div style={{background:'#fff',borderRadius:'var(--r2)',padding:20,color:'#1a1a2e',fontSize:13,maxHeight:300,overflow:'auto'}}>
+        <div style={{borderBottom:'2px solid #1d4ed8',paddingBottom:12,marginBottom:12}}>
+          <div style={{fontWeight:700,fontSize:16}}>{obj.name}</div>
+          <div>{shift.shiftType} смена · {fmtDT(shift.createdAt)}</div>
+        </div>
+        {shift.constructions.map((c,i)=>{
+          const st=refs.structTypes.find(s=>s.id===c.typeId)||{name:'?',emoji:'?'};
+          return <div key={i} style={{padding:'6px 0',borderBottom:'1px solid #e5e7eb',fontSize:13}}>
+            <strong>{st.emoji} {st.name} {c.label}</strong>
+            {' · '}Натура: {c.natura}{' · '}Арм: {c.armature}
+            {c.beton?.willPour&&<> · Бетон: {c.beton.volume}м³</>}
+          </div>
+        })}
+      </div>
+    </div>
+  </div>
+}
+
+// ═══════════════════════════════════════
+// PAGES
+// ═══════════════════════════════════════
+function DashboardPage({shifts,refs,setPage}){
+  const now=Date.now();
+  const week=7*24*3600*1000;
+  const recentShifts=shifts.filter(s=>now-s.createdAt<week);
+  const totalVol=shifts.reduce((s,sh)=>s+sh.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0),0);
+  const allWarns=shifts.flatMap(s=>s.constructions.flatMap(c=>getWarnings(c)));
+
+  // Chart data
+  const chartData=useMemo(()=>{
+    const days={};
+    for(let i=6;i>=0;i--){
+      const d=new Date(now-i*24*3600*1000);
+      const key=fmtDate(d);
+      days[key]={date:d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit'}),смены:0,бетон:0};
+    }
+    shifts.filter(s=>now-s.createdAt<week).forEach(s=>{
+      const key=fmtDate(s.createdAt);
+      if(days[key]){
+        days[key].смены++;
+        days[key].бетон+=s.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0);
+      }
+    });
+    return Object.values(days);
+  },[shifts]);
+
+  const recent=shifts.slice().sort((a,b)=>b.createdAt-a.createdAt).slice(0,5);
+
+  return <div>
+    <div className="stat-grid">
+      <div className="stat-card blue">
+        <div className="stat-icon">📋</div>
+        <div className="stat-val text-blue">{recentShifts.length}</div>
+        <div className="stat-label">Смен за неделю</div>
+        <div className="stat-change">Всего: {shifts.length}</div>
+      </div>
+      <div className="stat-card green">
+        <div className="stat-icon">🏗</div>
+        <div className="stat-val text-green">{totalVol}</div>
+        <div className="stat-label">м³ бетона всего</div>
+        <div className="stat-change">За неделю: {recentShifts.reduce((s,sh)=>s+sh.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0),0)} м³</div>
+      </div>
+      <div className="stat-card yellow">
+        <div className="stat-icon">⚠️</div>
+        <div className="stat-val text-yellow">{allWarns.length}</div>
+        <div className="stat-label">Предупреждений всего</div>
+        <div className="stat-change">В активных сменах</div>
+      </div>
+      <div className="stat-card blue">
+        <div className="stat-icon">🏛</div>
+        <div className="stat-val">{shifts.reduce((s,sh)=>s+sh.constructions.length,0)}</div>
+        <div className="stat-label">Конструкций всего</div>
+        <div className="stat-change">Объектов: {refs.objects.length}</div>
+      </div>
+    </div>
+
+    {Recharts&&chartData.some(d=>d.смены>0)&&<div className="card mb-24">
+      <div className="card-header">
+        <span className="card-title">📊 Смены за 7 дней</span>
+      </div>
+      <Recharts.ResponsiveContainer width="100%" height={160}>
+        <Recharts.BarChart data={chartData} margin={{top:0,right:0,bottom:0,left:-20}}>
+          <Recharts.XAxis dataKey="date" tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+          <Recharts.YAxis tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+          <Recharts.Tooltip contentStyle={{background:'#1a2235',border:'1px solid #1e2d47',borderRadius:8,color:'#e8edf5',fontSize:13}}/>
+          <Recharts.Bar dataKey="смены" fill="#3b7eff" radius={[4,4,0,0]}/>
+        </Recharts.BarChart>
+      </Recharts.ResponsiveContainer>
+    </div>}
+
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title">🕐 Последние смены</span>
+        <button className="btn btn-primary btn-sm" onClick={()=>setPage('new-shift')}>➕ Новая смена</button>
+      </div>
+      {recent.length===0
+        ?<div className="empty-state" style={{padding:'30px 0'}}>
+          <div className="empty-icon">📋</div>
+          <div className="empty-title">Нет смен</div>
+          <div style={{color:'var(--text3)',marginBottom:16}}>Создайте первую смену</div>
+          <button className="btn btn-primary" onClick={()=>setPage('new-shift')}>➕ Новая смена</button>
+        </div>
+        :<div className="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Объект</th><th>Блок</th><th>Смена</th><th>Конструкций</th><th>Бетон, м³</th><th>⚠️</th><th>Дата</th>
+            </tr></thead>
+            <tbody>
+              {recent.map(s=>{
+                const obj=refs.objects.find(o=>o.id===s.objectId)||{name:'—'};
+                const blk=refs.blocks.find(b=>b.id===s.blockId)||{name:'—'};
+                const vol=s.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0);
+                const warns=s.constructions.flatMap(c=>getWarnings(c));
+                return <tr key={s.id}>
+                  <td style={{fontWeight:600}}>{obj.name}</td>
+                  <td className="text-muted">{blk.name}</td>
+                  <td><span className={`badge badge-${s.shiftType==='День'?'yellow':'blue'}`}>{s.shiftType==='День'?'☀️':'🌙'} {s.shiftType}</span></td>
+                  <td className="font-mono">{s.constructions.length}</td>
+                  <td className="font-mono text-cyan">{vol}</td>
+                  <td>{warns.length>0&&<span className="badge badge-yellow">⚠️ {warns.length}</span>}</td>
+                  <td className="text-dim text-sm">{fmtDT(s.createdAt)}</td>
+                </tr>
+              })}
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+function NewShiftPage({refs,addShift,toast,setPage}){
+  const DRAFT_KEY='handover_draft';
+  const loadDraft=()=>{try{const s=localStorage.getItem(DRAFT_KEY);return s?JSON.parse(s):null}catch{return null}};
+  const draft=loadDraft();
+
+  const[step,setStep]=useState(0);
+  const[data,setData]=useState(draft?.data||{objectId:'',blockId:'',shiftType:'День',engineerId:'',notes:''});
+  const[constructions,setConstructions]=useState(draft?.constructions||[]);
+  const[savedShift,setSavedShift]=useState(null);
+  const[showDraftAlert,setShowDraftAlert]=useState(!!draft);
+
+  useEffect(()=>{
+    if(step<3)localStorage.setItem(DRAFT_KEY,JSON.stringify({data,constructions}));
+  },[data,constructions,step]);
+
+  const clearDraft=()=>localStorage.removeItem(DRAFT_KEY);
+
+  const step1Valid=data.objectId&&data.blockId&&data.shiftType&&data.engineerId;
+  const step2Valid=constructions.length>0;
+
+  const handleFinish=()=>{
+    const shift={id:uid(),createdAt:Date.now(),...data,constructions};
+    addShift(shift);
+    setSavedShift(shift);
+    clearDraft();
+    setStep(3);
+    toast('Смена успешно сохранена!','success');
+  };
+
+  const steps=[
+    {label:'Объект',icon:'🏗'},
+    {label:'Конструкции',icon:'🏛'},
+    {label:'Сводка',icon:'📋'},
+    {label:'Отчёт',icon:'📄'},
+  ];
+
+  return <div>
+    {showDraftAlert&&<div className="alert alert-blue mb-16">
+      <span>💾</span>
+      <div style={{flex:1}}>
+        <strong>Найден незавершённый черновик.</strong> Хотите продолжить?
+      </div>
+      <button className="btn btn-secondary btn-sm" onClick={()=>{setData({objectId:'',blockId:'',shiftType:'День',engineerId:'',notes:''});setConstructions([]);setShowDraftAlert(false);clearDraft()}}>Сбросить</button>
+      <button className="btn btn-ghost btn-sm" onClick={()=>setShowDraftAlert(false)}>✕</button>
+    </div>}
+
+    <div className="wizard-steps">
+      {steps.map((s,i)=>(
+        <div key={i} className={`wizard-step${i<step?' done':i===step?' active':''}`} onClick={()=>i<step&&setStep(i)}>
+          <div className="step-circle">{i<step?'✓':i+1}</div>
+          <div className="step-label">{s.label}</div>
+        </div>
+      ))}
+    </div>
+
+    <div className="card">
+      <div className="card-header">
+        <span className="card-title">{steps[step].icon} {steps[step].label}</span>
+        <div className="progress-bar" style={{width:120}}>
+          <div className="progress-fill" style={{width:`${(step/3)*100}%`}}/>
+        </div>
+      </div>
+      <div>
+        {step===0&&<Step1 data={data} setData={setData} refs={refs}/>}
+        {step===1&&<Step2 refs={refs} constructions={constructions} setConstructions={setConstructions} toast={toast}/>}
+        {step===2&&<Step3 data={data} refs={refs} constructions={constructions}/>}
+        {step===3&&savedShift&&<Step4 shift={savedShift} refs={refs}/>}
+      </div>
+      <hr/>
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          {step>0&&step<3&&<button className="btn btn-secondary" onClick={()=>setStep(s=>s-1)}>← Назад</button>}
+          {step===3&&<button className="btn btn-secondary" onClick={()=>{setData({objectId:'',blockId:'',shiftType:'День',engineerId:'',notes:''});setConstructions([]);setStep(0);setShowDraftAlert(false);}}>➕ Новая смена</button>}
+        </div>
+        <div style={{display:'flex',gap:10}}>
+          {step<3&&<button className="btn btn-ghost" onClick={()=>setPage('dashboard')}>Отмена</button>}
+          {step===0&&<button className="btn btn-primary" disabled={!step1Valid} onClick={()=>setStep(1)}>Далее →</button>}
+          {step===1&&<button className="btn btn-primary" disabled={!step2Valid} onClick={()=>setStep(2)}>К сводке →</button>}
+          {step===2&&<button className="btn btn-primary" onClick={handleFinish}>✅ Сохранить смену</button>}
+          {step===3&&<button className="btn btn-primary" onClick={()=>setPage('history')}>История смен →</button>}
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+function HistoryPage({shifts,refs,deleteShift,toast}){
+  const[search,setSearch]=useState('');
+  const[filterObj,setFilterObj]=useState('');
+  const[filterShiftType,setFilterShiftType]=useState('');
+  const[dateFrom,setDateFrom]=useState('');
+  const[dateTo,setDateTo]=useState('');
+  const[confirm,setConfirm]=useState(null);
+  const[expandedId,setExpandedId]=useState(null);
+
+  const filtered=useMemo(()=>{
+    return shifts.slice().sort((a,b)=>b.createdAt-a.createdAt).filter(s=>{
+      const obj=refs.objects.find(o=>o.id===s.objectId)||{name:''};
+      const blk=refs.blocks.find(b=>b.id===s.blockId)||{name:''};
+      if(filterObj&&s.objectId!==filterObj)return false;
+      if(filterShiftType&&s.shiftType!==filterShiftType)return false;
+      if(dateFrom&&fmtDate(s.createdAt)<dateFrom)return false;
+      if(dateTo&&fmtDate(s.createdAt)>dateTo)return false;
+      if(search){
+        const q=search.toLowerCase();
+        if(!obj.name.toLowerCase().includes(q)&&!blk.name.toLowerCase().includes(q)&&!s.constructions.some(c=>c.label.toLowerCase().includes(q)))return false;
+      }
+      return true;
+    });
+  },[shifts,search,filterObj,filterShiftType,dateFrom,dateTo]);
+
+  const totalVol=filtered.reduce((s,sh)=>s+sh.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0),0);
+
+  const openReport=s=>{
+    const html=generateReport(s,refs);
+    const win=window.open('','_blank');win.document.write(html);win.document.close();
+  };
+  const downloadReport=s=>{
+    const blob=new Blob([generateReport(s,refs)],{type:'text/html'});
+    const url=URL.createObjectURL(blob);const a=document.createElement('a');
+    a.href=url;a.download=`smena-${fmtDate(s.createdAt)}.html`;a.click();URL.revokeObjectURL(url);
+  };
+
+  return <div>
+    {confirm&&<ConfirmModal title="Удалить смену?" text="Это действие необратимо." onConfirm={()=>{deleteShift(confirm);setConfirm(null);toast('Смена удалена','warning')}} onCancel={()=>setConfirm(null)}/>}
+
+    <div className="card mb-16">
+      <div className="filter-bar">
+        <input className="form-input" style={{width:220}} placeholder="🔍 Поиск..." value={search} onChange={e=>setSearch(e.target.value)}/>
+        <select className="form-select" style={{width:200}} value={filterObj} onChange={e=>setFilterObj(e.target.value)}>
+          <option value="">Все объекты</option>
+          {refs.objects.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+        <select className="form-select" style={{width:140}} value={filterShiftType} onChange={e=>setFilterShiftType(e.target.value)}>
+          <option value="">Все смены</option>
+          <option value="День">☀️ День</option>
+          <option value="Ночь">🌙 Ночь</option>
+        </select>
+        <input className="form-input" style={{width:140}} type="date" value={dateFrom} onChange={e=>setDateFrom(e.target.value)}/>
+        <span className="text-dim" style={{lineHeight:'38px'}}>—</span>
+        <input className="form-input" style={{width:140}} type="date" value={dateTo} onChange={e=>setDateTo(e.target.value)}/>
+        <button className="btn btn-ghost" onClick={()=>{setSearch('');setFilterObj('');setFilterShiftType('');setDateFrom('');setDateTo('')}}>✕ Сброс</button>
+      </div>
+      <div style={{fontSize:13,color:'var(--text3)'}}>
+        Найдено: <strong style={{color:'var(--text)'}}>{filtered.length}</strong> смен · Объём: <strong style={{color:'var(--cyan)'}}>{totalVol} м³</strong>
+      </div>
+    </div>
+
+    {filtered.length===0
+      ?<div className="empty-state"><div className="empty-icon">📂</div><div className="empty-title">Ничего не найдено</div></div>
+      :<div>
+        {filtered.map(s=>{
+          const obj=refs.objects.find(o=>o.id===s.objectId)||{name:'—'};
+          const blk=refs.blocks.find(b=>b.id===s.blockId)||{name:'—'};
+          const eng=refs.engineers.find(e=>e.id===s.engineerId)||{name:'—'};
+          const vol=s.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0);
+          const warns=s.constructions.flatMap(c=>getWarnings(c));
+          const expanded=expandedId===s.id;
+          return <div key={s.id} className="card mb-12">
+            <div style={{display:'flex',alignItems:'flex-start',gap:12,justifyContent:'space-between'}}>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',alignItems:'center',gap:10,flexWrap:'wrap',marginBottom:6}}>
+                  <span style={{fontWeight:700,fontSize:16}}>{obj.name}</span>
+                  <span className="badge badge-gray">{blk.name}</span>
+                  <span className={`badge badge-${s.shiftType==='День'?'yellow':'blue'}`}>{s.shiftType==='День'?'☀️':'🌙'} {s.shiftType}</span>
+                  {warns.length>0&&<span className="badge badge-yellow">⚠️ {warns.length}</span>}
+                </div>
+                <div style={{display:'flex',gap:16,fontSize:13,color:'var(--text2)',flexWrap:'wrap'}}>
+                  <span>👷 {eng.name}</span>
+                  <span>🏛 {s.constructions.length} констр.</span>
+                  <span>🏗 {vol} м³</span>
+                  <span>🕐 {fmtDT(s.createdAt)}</span>
+                </div>
+              </div>
+              <div style={{display:'flex',gap:6,flexShrink:0}}>
+                <button className="btn btn-secondary btn-sm" onClick={()=>setExpandedId(expanded?null:s.id)}>{expanded?'▲':'▼'}</button>
+                <button className="btn btn-secondary btn-sm" onClick={()=>openReport(s)}>🖨️</button>
+                <button className="btn btn-secondary btn-sm" onClick={()=>downloadReport(s)}>⬇️</button>
+                <button className="btn btn-ghost btn-sm" onClick={()=>setConfirm(s.id)}>🗑️</button>
+              </div>
+            </div>
+            {expanded&&<>
+              <hr/>
+              <div>
+                {s.constructions.map((c,i)=>{
+                  const st=refs.structTypes.find(t=>t.id===c.typeId)||{name:'?',emoji:'?'};
+                  const cw=getWarnings(c);
+                  return <div key={i} style={{padding:'8px 0',borderBottom:'1px solid var(--border)',display:'flex',alignItems:'center',gap:10,justifyContent:'space-between',flexWrap:'wrap'}}>
+                    <div>
+                      <strong>{st.emoji} {st.name}</strong>{' '}
+                      <span style={{fontFamily:'var(--font-mono)',color:'var(--cyan)'}}>{c.label}</span>
+                      {c.comment&&<span style={{color:'var(--text3)',fontSize:12,marginLeft:8}}>💬 {c.comment}</span>}
+                    </div>
+                    <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
+                      <span className={`badge badge-${c.natura==='Дана'?'green':c.natura==='Будет ночью'?'yellow':'red'}`}>{c.natura}</span>
+                      <span className={`badge badge-${c.armature==='Сдана'?'green':c.armature==='Частично'?'yellow':'red'}`}>{c.armature}</span>
+                      {c.beton?.willPour&&<span className="badge badge-blue">{c.beton.volume}м³</span>}
+                      {cw.length>0&&<span className="badge badge-yellow">⚠️ {cw.length}</span>}
+                    </div>
+                  </div>
+                })}
+                {s.notes&&<div style={{marginTop:10,padding:'8px 12px',background:'var(--bg2)',borderRadius:'var(--r2)',fontSize:13,color:'var(--text2)'}}>💬 {s.notes}</div>}
+              </div>
+            </>}
+          </div>
+        })}
+      </div>
+    }
+  </div>
+}
+
+function AdminPage({refs,setRefs,toast}){
+  const[tab,setTab]=useState('objects');
+  const[confirm,setConfirm]=useState(null);
+
+  const tabs=[
+    {key:'objects',label:'Объекты'},
+    {key:'blocks',label:'Блоки'},
+    {key:'structTypes',label:'Типы констр.'},
+    {key:'defects',label:'Дефекты'},
+    {key:'deliveryMethods',label:'Подача бетона'},
+    {key:'pumpTypes',label:'Насосы'},
+    {key:'engineers',label:'Инженеры'},
+  ];
+
+  const add=(key,item)=>{
+    setRefs(p=>({...p,[key]:[...p[key],{id:uid(),...item}]}));
+    toast('Добавлено','success');
+  };
+  const del=(key,id)=>{
+    setRefs(p=>({...p,[key]:p[key].filter(x=>x.id!==id)}));
+    toast('Удалено','warning');
+    setConfirm(null);
+  };
+  const upd=(key,id,field,val)=>{
+    setRefs(p=>({...p,[key]:p[key].map(x=>x.id===id?{...x,[field]:val}:x)}));
+  };
+
+  return <div>
+    {confirm&&<ConfirmModal title="Удалить запись?" onConfirm={confirm.fn} onCancel={()=>setConfirm(null)}/>}
+    <div style={{display:'flex',gap:6,flexWrap:'wrap',marginBottom:20}}>
+      {tabs.map(t=>(
+        <button key={t.key} className={`btn btn-sm${tab===t.key?' btn-primary':' btn-secondary'}`} onClick={()=>setTab(t.key)}>
+          {t.label}
+        </button>
+      ))}
+    </div>
+    {tab==='objects'&&<AdminObjectsTab items={refs.objects} onAdd={v=>add('objects',v)} onDel={id=>setConfirm({fn:()=>del('objects',id)})} onUpd={(id,f,v)=>upd('objects',id,f,v)}/>}
+    {tab==='blocks'&&<AdminBlocksTab items={refs.blocks} objects={refs.objects} onAdd={v=>add('blocks',v)} onDel={id=>setConfirm({fn:()=>del('blocks',id)})} onUpd={(id,f,v)=>upd('blocks',id,f,v)}/>}
+    {tab==='structTypes'&&<AdminSimpleTab title="Типы конструкций" items={refs.structTypes} fields={[{key:'emoji',label:'Emoji',w:60},{key:'name',label:'Название'}]} onAdd={v=>add('structTypes',v)} onDel={id=>setConfirm({fn:()=>del('structTypes',id)})} onUpd={(id,f,v)=>upd('structTypes',id,f,v)}/>}
+    {tab==='defects'&&<AdminSimpleTab title="Дефекты" items={refs.defects} fields={[{key:'name',label:'Название'}]} onAdd={v=>add('defects',v)} onDel={id=>setConfirm({fn:()=>del('defects',id)})} onUpd={(id,f,v)=>upd('defects',id,f,v)}/>}
+    {tab==='deliveryMethods'&&<AdminSimpleTab title="Способы подачи" items={refs.deliveryMethods} fields={[{key:'name',label:'Название'}]} onAdd={v=>add('deliveryMethods',v)} onDel={id=>setConfirm({fn:()=>del('deliveryMethods',id)})} onUpd={(id,f,v)=>upd('deliveryMethods',id,f,v)}/>}
+    {tab==='pumpTypes'&&<AdminSimpleTab title="Типы насосов" items={refs.pumpTypes} fields={[{key:'name',label:'Название'}]} onAdd={v=>add('pumpTypes',v)} onDel={id=>setConfirm({fn:()=>del('pumpTypes',id)})} onUpd={(id,f,v)=>upd('pumpTypes',id,f,v)}/>}
+    {tab==='engineers'&&<AdminSimpleTab title="Инженеры" items={refs.engineers} fields={[{key:'name',label:'ФИО'},{key:'role',label:'Должность'}]} onAdd={v=>add('engineers',v)} onDel={id=>setConfirm({fn:()=>del('engineers',id)})} onUpd={(id,f,v)=>upd('engineers',id,f,v)}/>}
+  </div>
+}
+
+function AdminSimpleTab({title,items,fields,onAdd,onDel,onUpd}){
+  const empty=Object.fromEntries(fields.map(f=>[f.key,'']));
+  const[newItem,setNewItem]=useState(empty);
+  const valid=fields.some(f=>newItem[f.key]);
+  return <div className="card">
+    <div className="card-header"><span className="card-title">{title} ({items.length})</span></div>
+    <div className="table-wrap mb-16">
+      <table>
+        <thead><tr>{fields.map(f=><th key={f.key}>{f.label}</th>)}<th>Действия</th></tr></thead>
+        <tbody>
+          {items.map(item=>(
+            <tr key={item.id}>
+              {fields.map(f=>(
+                <td key={f.key} style={{width:f.w}}>
+                  <input className="form-input" style={{padding:'6px 10px',fontSize:13}} value={item[f.key]||''} onChange={e=>onUpd(item.id,f.key,e.target.value)}/>
+                </td>
+              ))}
+              <td><button className="btn btn-danger btn-sm" onClick={()=>onDel(item.id)}>🗑️</button></td>
+            </tr>
+          ))}
+          {items.length===0&&<tr><td colSpan={fields.length+1} style={{textAlign:'center',color:'var(--text3)',padding:20}}>Нет записей</td></tr>}
+        </tbody>
+      </table>
+    </div>
+    <div style={{display:'flex',gap:8,alignItems:'flex-end'}}>
+      {fields.map(f=>(
+        <div key={f.key} style={{flex:f.w?0:1,minWidth:f.w||100}}>
+          <label className="form-label">{f.label}</label>
+          <input className="form-input" value={newItem[f.key]||''} onChange={e=>setNewItem(p=>({...p,[f.key]:e.target.value}))} onKeyDown={e=>e.key==='Enter'&&valid&&(onAdd(newItem),setNewItem(empty))}/>
+        </div>
+      ))}
+      <button className="btn btn-primary" disabled={!valid} onClick={()=>{onAdd(newItem);setNewItem(empty)}}>Добавить</button>
+    </div>
+  </div>
+}
+
+function AdminObjectsTab({items,onAdd,onDel,onUpd}){
+  const[n,setN]=useState({name:'',address:''});
+  return <div className="card">
+    <div className="card-header"><span className="card-title">Объекты ({items.length})</span></div>
+    <div className="table-wrap mb-16">
+      <table>
+        <thead><tr><th>Название</th><th>Адрес</th><th>Действия</th></tr></thead>
+        <tbody>
+          {items.map(o=><tr key={o.id}>
+            <td><input className="form-input" style={{padding:'6px 10px',fontSize:13}} value={o.name} onChange={e=>onUpd(o.id,'name',e.target.value)}/></td>
+            <td><input className="form-input" style={{padding:'6px 10px',fontSize:13}} value={o.address||''} onChange={e=>onUpd(o.id,'address',e.target.value)}/></td>
+            <td><button className="btn btn-danger btn-sm" onClick={()=>onDel(o.id)}>🗑️</button></td>
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+    <div style={{display:'flex',gap:8,alignItems:'flex-end'}}>
+      <div style={{flex:1}}><label className="form-label">Название</label><input className="form-input" value={n.name} onChange={e=>setN(p=>({...p,name:e.target.value}))}/></div>
+      <div style={{flex:1}}><label className="form-label">Адрес</label><input className="form-input" value={n.address} onChange={e=>setN(p=>({...p,address:e.target.value}))}/></div>
+      <button className="btn btn-primary" disabled={!n.name} onClick={()=>{onAdd(n);setN({name:'',address:''})}}>Добавить</button>
+    </div>
+  </div>
+}
+
+function AdminBlocksTab({items,objects,onAdd,onDel,onUpd}){
+  const[n,setN]=useState({name:'',objectId:''});
+  return <div className="card">
+    <div className="card-header"><span className="card-title">Блоки / Секции ({items.length})</span></div>
+    <div className="table-wrap mb-16">
+      <table>
+        <thead><tr><th>Название</th><th>Объект</th><th>Действия</th></tr></thead>
+        <tbody>
+          {items.map(b=><tr key={b.id}>
+            <td><input className="form-input" style={{padding:'6px 10px',fontSize:13}} value={b.name} onChange={e=>onUpd(b.id,'name',e.target.value)}/></td>
+            <td>
+              <select className="form-select" style={{padding:'6px 10px',fontSize:13}} value={b.objectId} onChange={e=>onUpd(b.id,'objectId',e.target.value)}>
+                {objects.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+              </select>
+            </td>
+            <td><button className="btn btn-danger btn-sm" onClick={()=>onDel(b.id)}>🗑️</button></td>
+          </tr>)}
+        </tbody>
+      </table>
+    </div>
+    <div style={{display:'flex',gap:8,alignItems:'flex-end'}}>
+      <div style={{flex:1}}><label className="form-label">Название</label><input className="form-input" value={n.name} onChange={e=>setN(p=>({...p,name:e.target.value}))}/></div>
+      <div style={{flex:1}}><label className="form-label">Объект</label>
+        <select className="form-select" value={n.objectId} onChange={e=>setN(p=>({...p,objectId:e.target.value}))}>
+          <option value="">— Выбрать —</option>
+          {objects.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+        </select>
+      </div>
+      <button className="btn btn-primary" disabled={!n.name||!n.objectId} onClick={()=>{onAdd(n);setN({name:'',objectId:''})}}>Добавить</button>
+    </div>
+  </div>
+}
+
+// ═══════════════════════════════════════
+// ANALYTICS PAGE
+// ═══════════════════════════════════════
+function AnalyticsPage({shifts,refs}){
+  if(!Recharts)return <div className="empty-state"><div className="empty-title">Recharts не загружен</div></div>;
+
+  const objData=refs.objects.map(o=>{
+    const oShifts=shifts.filter(s=>s.objectId===o.id);
+    const vol=oShifts.reduce((a,s)=>a+s.constructions.reduce((b,c)=>b+(c.beton?.willPour?c.beton.volume:0),0),0);
+    return {name:o.name.slice(0,15)+'…',смены:oShifts.length,бетон:vol};
+  }).filter(d=>d.смены>0);
+
+  const monthData=useMemo(()=>{
+    const months={};
+    shifts.forEach(s=>{
+      const d=new Date(s.createdAt);
+      const key=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      if(!months[key])months[key]={month:d.toLocaleDateString('ru-RU',{month:'short',year:'2-digit'}),смены:0,конструкций:0,бетон:0};
+      months[key].смены++;
+      months[key].конструкций+=s.constructions.length;
+      months[key].бетон+=s.constructions.reduce((a,c)=>a+(c.beton?.willPour?c.beton.volume:0),0);
+    });
+    return Object.values(months).slice(-6);
+  },[shifts]);
+
+  const structStats=useMemo(()=>{
+    const st={};
+    shifts.forEach(s=>s.constructions.forEach(c=>{
+      if(!st[c.typeId])st[c.typeId]=0;
+      st[c.typeId]++;
+    }));
+    return refs.structTypes.map(t=>({name:t.emoji+' '+t.name,count:st[t.id]||0})).filter(d=>d.count>0).sort((a,b)=>b.count-a.count);
+  },[shifts,refs]);
+
+  const COLORS=['#3b7eff','#06b6d4','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#14b8a6'];
+
+  if(shifts.length===0)return <div className="empty-state"><div className="empty-icon">📊</div><div className="empty-title">Нет данных для анализа</div><div style={{color:'var(--text3)'}}>Создайте несколько смен</div></div>;
+
+  return <div>
+    <div className="grid-2" style={{marginBottom:24}}>
+      <div className="card">
+        <div className="card-title mb-16">📊 Смены по месяцам</div>
+        <Recharts.ResponsiveContainer width="100%" height={200}>
+          <Recharts.LineChart data={monthData}>
+            <Recharts.XAxis dataKey="month" tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+            <Recharts.YAxis tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+            <Recharts.Tooltip contentStyle={{background:'#1a2235',border:'1px solid #1e2d47',borderRadius:8,color:'#e8edf5'}}/>
+            <Recharts.Line type="monotone" dataKey="смены" stroke="#3b7eff" strokeWidth={2} dot={{fill:'#3b7eff',r:4}}/>
+          </Recharts.LineChart>
+        </Recharts.ResponsiveContainer>
+      </div>
+      <div className="card">
+        <div className="card-title mb-16">🏗 Объём бетона, м³</div>
+        <Recharts.ResponsiveContainer width="100%" height={200}>
+          <Recharts.BarChart data={monthData}>
+            <Recharts.XAxis dataKey="month" tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+            <Recharts.YAxis tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+            <Recharts.Tooltip contentStyle={{background:'#1a2235',border:'1px solid #1e2d47',borderRadius:8,color:'#e8edf5'}}/>
+            <Recharts.Bar dataKey="бетон" fill="#06b6d4" radius={[4,4,0,0]}/>
+          </Recharts.BarChart>
+        </Recharts.ResponsiveContainer>
+      </div>
+    </div>
+    <div className="grid-2" style={{marginBottom:24}}>
+      <div className="card">
+        <div className="card-title mb-16">🏛 Типы конструкций</div>
+        <Recharts.ResponsiveContainer width="100%" height={200}>
+          <Recharts.PieChart>
+            <Recharts.Pie data={structStats} dataKey="count" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({name,count})=>`${name}: ${count}`} labelLine={false}>
+              {structStats.map((_,i)=><Recharts.Cell key={i} fill={COLORS[i%COLORS.length]}/>)}
+            </Recharts.Pie>
+            <Recharts.Tooltip contentStyle={{background:'#1a2235',border:'1px solid #1e2d47',borderRadius:8,color:'#e8edf5'}}/>
+          </Recharts.PieChart>
+        </Recharts.ResponsiveContainer>
+      </div>
+      <div className="card">
+        <div className="card-title mb-16">🏗 Смены по объектам</div>
+        <Recharts.ResponsiveContainer width="100%" height={200}>
+          <Recharts.BarChart data={objData} layout="vertical" margin={{left:10}}>
+            <Recharts.XAxis type="number" tick={{fill:'#4d6080',fontSize:11}} axisLine={false} tickLine={false}/>
+            <Recharts.YAxis type="category" dataKey="name" tick={{fill:'#8a9bb5',fontSize:11}} axisLine={false} tickLine={false} width={90}/>
+            <Recharts.Tooltip contentStyle={{background:'#1a2235',border:'1px solid #1e2d47',borderRadius:8,color:'#e8edf5'}}/>
+            <Recharts.Bar dataKey="смены" fill="#10b981" radius={[0,4,4,0]}/>
+          </Recharts.BarChart>
+        </Recharts.ResponsiveContainer>
+      </div>
+    </div>
+    <div className="card">
+      <div className="card-title mb-16">📋 Топ показатели</div>
+      <div className="grid-3">
+        {[
+          {label:'Всего смен',val:shifts.length,icon:'📋',color:'blue'},
+          {label:'Всего конструкций',val:shifts.reduce((a,s)=>a+s.constructions.length,0),icon:'🏛',color:'cyan'},
+          {label:'Общий объём м³',val:shifts.reduce((a,s)=>a+s.constructions.reduce((b,c)=>b+(c.beton?.willPour?c.beton.volume:0),0),0),icon:'🏗',color:'green'},
+          {label:'С предупреждениями',val:shifts.filter(s=>s.constructions.some(c=>getWarnings(c).length>0)).length,icon:'⚠️',color:'yellow'},
+          {label:'Дневных смен',val:shifts.filter(s=>s.shiftType==='День').length,icon:'☀️',color:'yellow'},
+          {label:'Ночных смен',val:shifts.filter(s=>s.shiftType==='Ночь').length,icon:'🌙',color:'blue'},
+        ].map((s,i)=>(
+          <div key={i} style={{padding:16,background:'var(--bg2)',borderRadius:'var(--r2)',border:'1px solid var(--border)'}}>
+            <div style={{fontSize:20,marginBottom:6}}>{s.icon}</div>
+            <div style={{fontFamily:'var(--font-mono)',fontSize:24,fontWeight:800,color:`var(--${s.color})`}}>{s.val}</div>
+            <div style={{fontSize:12,color:'var(--text3)'}}>{s.label}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+}
+
+// ═══════════════════════════════════════
+// MAIN APP
+// ═══════════════════════════════════════
+const PAGE_TITLES={
+  dashboard:'🏠 Дашборд',
+  'new-shift':'➕ Новая смена',
+  history:'📂 История смен',
+  analytics:'📊 Аналитика',
+  admin:'⚙️ Справочники',
+};
+
+export default function App(){
+  const[refs,setRefs]=useLS('handover_refs',DEFAULT_REFS);
+  const[shifts,setShifts]=useLS('handover_shifts',[]);
+  const[page,setPage]=useState('dashboard');
+  const[toasts,setToasts]=useState([]);
+  const[sidebarOpen,setSidebarOpen]=useState(false);
+
+  // Seed defaults if empty
+  useEffect(()=>{
+    if(!refs||!refs.objects||refs.objects.length===0)setRefs(DEFAULT_REFS);
+  },[]);
+
+  const toast=useCallback((msg,type='success')=>{
+    const id=uid();
+    setToasts(p=>[...p,{id,msg,type}]);
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3500);
+  },[]);
+
+  const addShift=useCallback(s=>setShifts(p=>[...p,s]),[]);
+  const deleteShift=useCallback(id=>setShifts(p=>p.filter(s=>s.id!==id)),[]);
+
+  const allWarns=shifts.flatMap(s=>s.constructions.flatMap(c=>getWarnings(c)));
+
+  const nav=[
+    {key:'dashboard',icon:'🏠',label:'Дашборд'},
+    {key:'new-shift',icon:'➕',label:'Новая смена'},
+    {key:'history',icon:'📂',label:'История'},
+    {key:'analytics',icon:'📊',label:'Аналитика'},
+    {key:'admin',icon:'⚙️',label:'Справочники'},
+  ];
+
+  const navigate=k=>{setPage(k);setSidebarOpen(false)};
+
+  return <>
+    <div className="mobile-header">
+      <button className="hamburger" onClick={()=>setSidebarOpen(o=>!o)}>☰</button>
+      <div style={{fontFamily:'var(--font-display)',fontWeight:800,fontSize:16}}>
+        Handover<span style={{color:'var(--blue)'}}>Pro</span>
+      </div>
+      <div style={{fontSize:13,color:'var(--text3)',fontFamily:'var(--font-mono)'}}>{fmtDate(Date.now())}</div>
+    </div>
+
+    {sidebarOpen&&<div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.5)',zIndex:99}} onClick={()=>setSidebarOpen(false)}/>}
+
+    <div className="layout">
+      <aside className={`sidebar${sidebarOpen?' open':''}`}>
+        <div className="sidebar-logo">
+          <div className="logo-mark">
+            <div className="logo-icon">🏗</div>
+            <div>
+              <div className="logo-text">Handover<span>Pro</span></div>
+              <div className="logo-sub">Передача смены</div>
+            </div>
+          </div>
+        </div>
+        <nav className="nav">
+          <div className="nav-section-label">Навигация</div>
+          {nav.map(n=>(
+            <button key={n.key} className={`nav-item${page===n.key?' active':''}`} onClick={()=>navigate(n.key)}>
+              <span className="nav-icon">{n.icon}</span>
+              {n.label}
+              {n.key==='history'&&allWarns.length>0&&<span className="nav-badge">{allWarns.length}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="user-avatar">👷</div>
+            <div className="user-info">
+              <div className="user-name">Инженер ПТО</div>
+              <div className="user-role">{fmtDate(Date.now())}</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <main className="main">
+        <div className="topbar">
+          <div className="topbar-title">{PAGE_TITLES[page]||page}</div>
+          <div className="topbar-right">
+            <span style={{fontSize:12,color:'var(--text3)',fontFamily:'var(--font-mono)'}}>{fmtDT(Date.now())}</span>
+            {page!=='new-shift'&&<button className="btn btn-primary btn-sm" onClick={()=>navigate('new-shift')}>➕ Новая смена</button>}
+          </div>
+        </div>
+
+        <div className="page">
+          {page==='dashboard'&&<DashboardPage shifts={shifts} refs={refs} setPage={navigate}/>}
+          {page==='new-shift'&&<NewShiftPage refs={refs} addShift={addShift} toast={toast} setPage={navigate}/>}
+          {page==='history'&&<HistoryPage shifts={shifts} refs={refs} deleteShift={deleteShift} toast={toast}/>}
+          {page==='analytics'&&<AnalyticsPage shifts={shifts} refs={refs}/>}
+          {page==='admin'&&<AdminPage refs={refs} setRefs={setRefs} toast={toast}/>}
+        </div>
+      </main>
+    </div>
+
+    <ToastContainer toasts={toasts}/>
+  </>
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

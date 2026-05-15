@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: handover-pro
+    env: static
+    staticPublishPath: .
+    buildCommand: echo "No build needed"
+    headers:
+      - path: /*
+        name: Cache-Control
+        value: no-cache
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
