@@ -6,7 +6,6 @@
 <title>Handover Pro — Система передачи смены</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <style>
@@ -1831,7 +1830,7 @@ function DashboardPage(_ref0) {
     className: "stat-label"
   }, "\u041A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0439 \u0432\u0441\u0435\u0433\u043E"), /*#__PURE__*/React.createElement("div", {
     className: "stat-change"
-  }, "\u041E\u0431\u044A\u0435\u043A\u0442\u043E\u0432: ", refs.objects.length))), Recharts && chartData.some(function (d) {
+  }, "\u041E\u0431\u044A\u0435\u043A\u0442\u043E\u0432: ", refs.objects.length))), chartData.some(function (d) {
     return d.смены > 0;
   }) && /*#__PURE__*/React.createElement("div", {
     className: "card mb-24"
@@ -1839,45 +1838,12 @@ function DashboardPage(_ref0) {
     className: "card-header"
   }, /*#__PURE__*/React.createElement("span", {
     className: "card-title"
-  }, "\uD83D\uDCCA \u0421\u043C\u0435\u043D\u044B \u0437\u0430 7 \u0434\u043D\u0435\u0439")), /*#__PURE__*/React.createElement(Recharts.ResponsiveContainer, {
-    width: "100%",
-    height: 160
-  }, /*#__PURE__*/React.createElement(Recharts.BarChart, {
+  }, "\uD83D\uDCCA \u0421\u043C\u0435\u043D\u044B \u0437\u0430 7 \u0434\u043D\u0435\u0439")), /*#__PURE__*/React.createElement(SvgBarChart, {
     data: chartData,
-    margin: {
-      top: 0,
-      right: 0,
-      bottom: 0,
-      left: -20
-    }
-  }, /*#__PURE__*/React.createElement(Recharts.XAxis, {
-    dataKey: "date",
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.YAxis, {
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.Tooltip, {
-    contentStyle: {
-      background: '#1a2235',
-      border: '1px solid #1e2d47',
-      borderRadius: 8,
-      color: '#e8edf5',
-      fontSize: 13
-    }
-  }), /*#__PURE__*/React.createElement(Recharts.Bar, {
     dataKey: "\u0441\u043C\u0435\u043D\u044B",
-    fill: "#3b7eff",
-    radius: [4, 4, 0, 0]
-  })))), /*#__PURE__*/React.createElement("div", {
+    color: "#3b7eff",
+    height: 140
+  })), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-header"
@@ -3027,16 +2993,397 @@ function AdminBlocksTab(_ref14) {
 }
 
 // ═══════════════════════════════════════
+// SVG CHART COMPONENTS (no dependencies)
+// ═══════════════════════════════════════
+function SvgBarChart(_ref15) {
+  var data = _ref15.data,
+    dataKey = _ref15.dataKey,
+    labelKey = _ref15.labelKey,
+    _ref15$color = _ref15.color,
+    color = _ref15$color === void 0 ? '#3b7eff' : _ref15$color,
+    _ref15$height = _ref15.height,
+    height = _ref15$height === void 0 ? 160 : _ref15$height,
+    _ref15$horizontal = _ref15.horizontal,
+    horizontal = _ref15$horizontal === void 0 ? false : _ref15$horizontal;
+  var W = 500,
+    H = height,
+    PL = horizontal ? 100 : 30,
+    PR = 10,
+    PT = 10,
+    PB = 28;
+  var vals = data.map(function (d) {
+    return d[dataKey] || 0;
+  });
+  var maxV = Math.max.apply(Math, _toConsumableArray(vals).concat([1]));
+  var iW = W - PL - PR,
+    iH = H - PT - PB;
+  var _useState41 = useState(null),
+    _useState42 = _slicedToArray(_useState41, 2),
+    tooltip = _useState42[0],
+    setTooltip = _useState42[1];
+  if (horizontal) {
+    var bH = Math.min(24, iH / data.length - 4);
+    return /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'relative'
+      }
+    }, /*#__PURE__*/React.createElement("svg", {
+      viewBox: "0 0 ".concat(W, " ").concat(H),
+      style: {
+        width: '100%',
+        height: height
+      },
+      preserveAspectRatio: "xMidYMid meet"
+    }, data.map(function (d, i) {
+      var bW = (d[dataKey] || 0) / maxV * iW;
+      var y = PT + i * (iH / data.length) + (iH / data.length - bH) / 2;
+      var lbl = d[labelKey] || d.name || '';
+      return /*#__PURE__*/React.createElement("g", {
+        key: i
+      }, /*#__PURE__*/React.createElement("text", {
+        x: PL - 6,
+        y: y + bH / 2 + 4,
+        textAnchor: "end",
+        fill: "#4d6080",
+        fontSize: 10
+      }, lbl.slice(0, 12)), /*#__PURE__*/React.createElement("rect", {
+        x: PL,
+        y: y,
+        width: Math.max(bW, 2),
+        height: bH,
+        fill: color,
+        rx: 3,
+        opacity: .85
+      }), bW > 24 && /*#__PURE__*/React.createElement("text", {
+        x: PL + bW - 6,
+        y: y + bH / 2 + 4,
+        textAnchor: "end",
+        fill: "#fff",
+        fontSize: 10,
+        fontWeight: "600"
+      }, d[dataKey]));
+    }), /*#__PURE__*/React.createElement("line", {
+      x1: PL,
+      y1: PT,
+      x2: PL,
+      y2: H - PB,
+      stroke: "#1e2d47",
+      strokeWidth: 1
+    })), tooltip && /*#__PURE__*/React.createElement("div", {
+      style: {
+        position: 'absolute',
+        background: '#1a2235',
+        border: '1px solid #1e2d47',
+        borderRadius: 6,
+        padding: '6px 10px',
+        fontSize: 12,
+        color: '#e8edf5',
+        pointerEvents: 'none',
+        top: tooltip.y,
+        left: tooltip.x,
+        whiteSpace: 'nowrap'
+      }
+    }, tooltip.text));
+  }
+  var barW = Math.max(8, Math.min(40, iW / data.length - 6));
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 ".concat(W, " ").concat(H),
+    style: {
+      width: '100%',
+      height: height
+    },
+    preserveAspectRatio: "xMidYMid meet",
+    onMouseLeave: function onMouseLeave() {
+      return setTooltip(null);
+    }
+  }, [0, maxV].map(function (v, i) {
+    var y = PT + iH - iH * (v / maxV);
+    return /*#__PURE__*/React.createElement("g", {
+      key: i
+    }, /*#__PURE__*/React.createElement("line", {
+      x1: PL,
+      x2: W - PR,
+      y1: y,
+      y2: y,
+      stroke: "#1e2d47",
+      strokeWidth: 1,
+      strokeDasharray: i === 0 ? '' : '4 4'
+    }), /*#__PURE__*/React.createElement("text", {
+      x: PL - 4,
+      y: y + 4,
+      textAnchor: "end",
+      fill: "#4d6080",
+      fontSize: 10
+    }, v));
+  }), data.map(function (d, i) {
+    var v = d[dataKey] || 0;
+    var bH = iH * (v / maxV);
+    var x = PL + i * (iW / data.length) + (iW / data.length - barW) / 2;
+    var y = PT + iH - bH;
+    var label = d[labelKey] || d.date || d.month || '';
+    return /*#__PURE__*/React.createElement("g", {
+      key: i,
+      onMouseEnter: function onMouseEnter(e) {
+        return setTooltip({
+          text: "".concat(label, ": ").concat(v),
+          x: x,
+          y: y - 28
+        });
+      }
+    }, /*#__PURE__*/React.createElement("rect", {
+      x: x,
+      y: Math.max(y, PT),
+      width: barW,
+      height: Math.max(bH, v > 0 ? 2 : 0),
+      fill: color,
+      rx: 3,
+      opacity: .85
+    }), /*#__PURE__*/React.createElement("text", {
+      x: x + barW / 2,
+      y: H - PB + 14,
+      textAnchor: "middle",
+      fill: "#4d6080",
+      fontSize: 10
+    }, label));
+  })), tooltip && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      background: '#1a2235',
+      border: '1px solid #1e2d47',
+      borderRadius: 6,
+      padding: '6px 10px',
+      fontSize: 12,
+      color: '#e8edf5',
+      pointerEvents: 'none',
+      top: tooltip.y,
+      left: tooltip.x,
+      whiteSpace: 'nowrap'
+    }
+  }, tooltip.text));
+}
+function SvgLineChart(_ref16) {
+  var data = _ref16.data,
+    dataKey = _ref16.dataKey,
+    labelKey = _ref16.labelKey,
+    _ref16$color = _ref16.color,
+    color = _ref16$color === void 0 ? '#3b7eff' : _ref16$color,
+    _ref16$height = _ref16.height,
+    height = _ref16$height === void 0 ? 160 : _ref16$height;
+  var W = 500,
+    H = height,
+    PL = 30,
+    PR = 10,
+    PT = 10,
+    PB = 28;
+  var vals = data.map(function (d) {
+    return d[dataKey] || 0;
+  });
+  var maxV = Math.max.apply(Math, _toConsumableArray(vals).concat([1]));
+  var iW = W - PL - PR,
+    iH = H - PT - PB;
+  var _useState43 = useState(null),
+    _useState44 = _slicedToArray(_useState43, 2),
+    tooltip = _useState44[0],
+    setTooltip = _useState44[1];
+  var pts = data.map(function (d, i) {
+    var x = PL + i * (iW / (data.length - 1 || 1));
+    var y = PT + iH - iH * ((d[dataKey] || 0) / maxV);
+    return {
+      x: x,
+      y: y,
+      v: d[dataKey] || 0,
+      label: d[labelKey] || d.month || ''
+    };
+  });
+  var path = pts.map(function (p, i) {
+    return "".concat(i === 0 ? 'M' : 'L').concat(p.x, ",").concat(p.y);
+  }).join(' ');
+  var area = "".concat(path, " L").concat(pts[pts.length - 1].x, ",").concat(PT + iH, " L").concat(pts[0].x, ",").concat(PT + iH, " Z");
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 ".concat(W, " ").concat(H),
+    style: {
+      width: '100%',
+      height: height
+    },
+    preserveAspectRatio: "xMidYMid meet",
+    onMouseLeave: function onMouseLeave() {
+      return setTooltip(null);
+    }
+  }, /*#__PURE__*/React.createElement("defs", null, /*#__PURE__*/React.createElement("linearGradient", {
+    id: "lineGrad",
+    x1: "0",
+    y1: "0",
+    x2: "0",
+    y2: "1"
+  }, /*#__PURE__*/React.createElement("stop", {
+    offset: "0%",
+    stopColor: color,
+    stopOpacity: ".25"
+  }), /*#__PURE__*/React.createElement("stop", {
+    offset: "100%",
+    stopColor: color,
+    stopOpacity: "0"
+  }))), /*#__PURE__*/React.createElement("line", {
+    x1: PL,
+    y1: PT + iH,
+    x2: W - PR,
+    y2: PT + iH,
+    stroke: "#1e2d47",
+    strokeWidth: 1
+  }), pts.length > 1 && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("path", {
+    d: area,
+    fill: "url(#lineGrad)"
+  }), /*#__PURE__*/React.createElement("path", {
+    d: path,
+    fill: "none",
+    stroke: color,
+    strokeWidth: 2,
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  })), pts.map(function (p, i) {
+    return /*#__PURE__*/React.createElement("g", {
+      key: i,
+      onMouseEnter: function onMouseEnter() {
+        return setTooltip({
+          text: "".concat(p.label, ": ").concat(p.v),
+          x: p.x,
+          y: p.y - 24
+        });
+      }
+    }, /*#__PURE__*/React.createElement("circle", {
+      cx: p.x,
+      cy: p.y,
+      r: 4,
+      fill: color,
+      stroke: "#0f1520",
+      strokeWidth: 2
+    }), /*#__PURE__*/React.createElement("text", {
+      x: p.x,
+      y: H - PB + 14,
+      textAnchor: "middle",
+      fill: "#4d6080",
+      fontSize: 10
+    }, p.label));
+  })), tooltip && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      background: '#1a2235',
+      border: '1px solid #1e2d47',
+      borderRadius: 6,
+      padding: '6px 10px',
+      fontSize: 12,
+      color: '#e8edf5',
+      pointerEvents: 'none',
+      top: tooltip.y,
+      left: tooltip.x,
+      whiteSpace: 'nowrap'
+    }
+  }, tooltip.text));
+}
+function SvgPieChart(_ref17) {
+  var data = _ref17.data,
+    _ref17$height = _ref17.height,
+    height = _ref17$height === void 0 ? 200 : _ref17$height;
+  var COLORS = ['#3b7eff', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
+  var total = data.reduce(function (s, d) {
+    return s + d.count;
+  }, 0) || 1;
+  var cx = 120,
+    cy = height / 2,
+    r = 80;
+  var angle = -Math.PI / 2;
+  var _useState45 = useState(null),
+    _useState46 = _slicedToArray(_useState45, 2),
+    tooltip = _useState46[0],
+    setTooltip = _useState46[1];
+  return /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'relative'
+    }
+  }, /*#__PURE__*/React.createElement("svg", {
+    viewBox: "0 0 ".concat(cx * 2 + 200, " ").concat(height),
+    style: {
+      width: '100%',
+      height: height
+    },
+    preserveAspectRatio: "xMidYMid meet",
+    onMouseLeave: function onMouseLeave() {
+      return setTooltip(null);
+    }
+  }, data.map(function (d, i) {
+    var slice = 2 * Math.PI * (d.count / total);
+    var x1 = cx + r * Math.cos(angle),
+      y1 = cy + r * Math.sin(angle);
+    angle += slice;
+    var x2 = cx + r * Math.cos(angle),
+      y2 = cy + r * Math.sin(angle);
+    var mx = cx + r * .65 * Math.cos(angle - slice / 2),
+      my = cy + r * .65 * Math.sin(angle - slice / 2);
+    var large = slice > Math.PI ? 1 : 0;
+    return /*#__PURE__*/React.createElement("path", {
+      key: i,
+      d: "M".concat(cx, ",").concat(cy, " L").concat(x1, ",").concat(y1, " A").concat(r, ",").concat(r, " 0 ").concat(large, ",1 ").concat(x2, ",").concat(y2, " Z"),
+      fill: COLORS[i % COLORS.length],
+      stroke: "#0f1520",
+      strokeWidth: 2,
+      onMouseEnter: function onMouseEnter() {
+        return setTooltip({
+          text: "".concat(d.name, ": ").concat(d.count),
+          x: mx,
+          y: my
+        });
+      },
+      style: {
+        cursor: 'pointer',
+        opacity: .9
+      }
+    });
+  }), data.slice(0, 6).map(function (d, i) {
+    return /*#__PURE__*/React.createElement("g", {
+      key: i,
+      transform: "translate(".concat(cx * 2 + 10, ",").concat(20 + i * 26, ")")
+    }, /*#__PURE__*/React.createElement("rect", {
+      width: 12,
+      height: 12,
+      rx: 3,
+      fill: COLORS[i % COLORS.length]
+    }), /*#__PURE__*/React.createElement("text", {
+      x: 18,
+      y: 10,
+      fill: "#8a9bb5",
+      fontSize: 12
+    }, d.name, ": ", d.count));
+  })), tooltip && /*#__PURE__*/React.createElement("div", {
+    style: {
+      position: 'absolute',
+      background: '#1a2235',
+      border: '1px solid #1e2d47',
+      borderRadius: 6,
+      padding: '6px 10px',
+      fontSize: 12,
+      color: '#e8edf5',
+      pointerEvents: 'none',
+      top: tooltip.y,
+      left: tooltip.x,
+      whiteSpace: 'nowrap'
+    }
+  }, tooltip.text));
+}
+
+// ═══════════════════════════════════════
 // ANALYTICS PAGE
 // ═══════════════════════════════════════
-function AnalyticsPage(_ref15) {
-  var shifts = _ref15.shifts,
-    refs = _ref15.refs;
-  if (!Recharts) return /*#__PURE__*/React.createElement("div", {
-    className: "empty-state"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "empty-title"
-  }, "Recharts \u043D\u0435 \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D"));
+function AnalyticsPage(_ref18) {
+  var shifts = _ref18.shifts,
+    refs = _ref18.refs;
   var objData = refs.objects.map(function (o) {
     var oShifts = shifts.filter(function (s) {
       return s.objectId === o.id;
@@ -3048,7 +3395,7 @@ function AnalyticsPage(_ref15) {
       }, 0);
     }, 0);
     return {
-      name: o.name.slice(0, 15) + '…',
+      name: o.name.slice(0, 14),
       смены: oShifts.length,
       бетон: vol
     };
@@ -3097,7 +3444,6 @@ function AnalyticsPage(_ref15) {
       return b.count - a.count;
     });
   }, [shifts, refs]);
-  var COLORS = ['#3b7eff', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
   if (shifts.length === 0) return /*#__PURE__*/React.createElement("div", {
     className: "empty-state"
   }, /*#__PURE__*/React.createElement("div", {
@@ -3118,78 +3464,23 @@ function AnalyticsPage(_ref15) {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title mb-16"
-  }, "\uD83D\uDCCA \u0421\u043C\u0435\u043D\u044B \u043F\u043E \u043C\u0435\u0441\u044F\u0446\u0430\u043C"), /*#__PURE__*/React.createElement(Recharts.ResponsiveContainer, {
-    width: "100%",
-    height: 200
-  }, /*#__PURE__*/React.createElement(Recharts.LineChart, {
-    data: monthData
-  }, /*#__PURE__*/React.createElement(Recharts.XAxis, {
-    dataKey: "month",
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.YAxis, {
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.Tooltip, {
-    contentStyle: {
-      background: '#1a2235',
-      border: '1px solid #1e2d47',
-      borderRadius: 8,
-      color: '#e8edf5'
-    }
-  }), /*#__PURE__*/React.createElement(Recharts.Line, {
-    type: "monotone",
+  }, "\uD83D\uDCCA \u0421\u043C\u0435\u043D\u044B \u043F\u043E \u043C\u0435\u0441\u044F\u0446\u0430\u043C"), /*#__PURE__*/React.createElement(SvgLineChart, {
+    data: monthData,
     dataKey: "\u0441\u043C\u0435\u043D\u044B",
-    stroke: "#3b7eff",
-    strokeWidth: 2,
-    dot: {
-      fill: '#3b7eff',
-      r: 4
-    }
-  })))), /*#__PURE__*/React.createElement("div", {
+    labelKey: "month",
+    color: "#3b7eff",
+    height: 180
+  })), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title mb-16"
-  }, "\uD83C\uDFD7 \u041E\u0431\u044A\u0451\u043C \u0431\u0435\u0442\u043E\u043D\u0430, \u043C\xB3"), /*#__PURE__*/React.createElement(Recharts.ResponsiveContainer, {
-    width: "100%",
-    height: 200
-  }, /*#__PURE__*/React.createElement(Recharts.BarChart, {
-    data: monthData
-  }, /*#__PURE__*/React.createElement(Recharts.XAxis, {
-    dataKey: "month",
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.YAxis, {
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.Tooltip, {
-    contentStyle: {
-      background: '#1a2235',
-      border: '1px solid #1e2d47',
-      borderRadius: 8,
-      color: '#e8edf5'
-    }
-  }), /*#__PURE__*/React.createElement(Recharts.Bar, {
+  }, "\uD83C\uDFD7 \u041E\u0431\u044A\u0451\u043C \u0431\u0435\u0442\u043E\u043D\u0430, \u043C\xB3"), /*#__PURE__*/React.createElement(SvgBarChart, {
+    data: monthData,
     dataKey: "\u0431\u0435\u0442\u043E\u043D",
-    fill: "#06b6d4",
-    radius: [4, 4, 0, 0]
-  }))))), /*#__PURE__*/React.createElement("div", {
+    labelKey: "month",
+    color: "#06b6d4",
+    height: 180
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "grid-2",
     style: {
       marginBottom: 24
@@ -3198,77 +3489,39 @@ function AnalyticsPage(_ref15) {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title mb-16"
-  }, "\uD83C\uDFDB \u0422\u0438\u043F\u044B \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0439"), /*#__PURE__*/React.createElement(Recharts.ResponsiveContainer, {
-    width: "100%",
-    height: 200
-  }, /*#__PURE__*/React.createElement(Recharts.PieChart, null, /*#__PURE__*/React.createElement(Recharts.Pie, {
+  }, "\uD83C\uDFDB \u0422\u0438\u043F\u044B \u043A\u043E\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0438\u0439"), structStats.length > 0 ? /*#__PURE__*/React.createElement(SvgPieChart, {
     data: structStats,
-    dataKey: "count",
-    nameKey: "name",
-    cx: "50%",
-    cy: "50%",
-    outerRadius: 80,
-    label: function label(_ref16) {
-      var name = _ref16.name,
-        count = _ref16.count;
-      return "".concat(name, ": ").concat(count);
-    },
-    labelLine: false
-  }, structStats.map(function (_, i) {
-    return /*#__PURE__*/React.createElement(Recharts.Cell, {
-      key: i,
-      fill: COLORS[i % COLORS.length]
-    });
-  })), /*#__PURE__*/React.createElement(Recharts.Tooltip, {
-    contentStyle: {
-      background: '#1a2235',
-      border: '1px solid #1e2d47',
-      borderRadius: 8,
-      color: '#e8edf5'
+    height: 200
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "empty-state",
+    style: {
+      padding: '20px 0'
     }
-  })))), /*#__PURE__*/React.createElement("div", {
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: 'var(--text3)'
+    }
+  }, "\u041D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445"))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title mb-16"
-  }, "\uD83C\uDFD7 \u0421\u043C\u0435\u043D\u044B \u043F\u043E \u043E\u0431\u044A\u0435\u043A\u0442\u0430\u043C"), /*#__PURE__*/React.createElement(Recharts.ResponsiveContainer, {
-    width: "100%",
-    height: 200
-  }, /*#__PURE__*/React.createElement(Recharts.BarChart, {
+  }, "\uD83C\uDFD7 \u0421\u043C\u0435\u043D\u044B \u043F\u043E \u043E\u0431\u044A\u0435\u043A\u0442\u0430\u043C"), objData.length > 0 ? /*#__PURE__*/React.createElement(SvgBarChart, {
     data: objData,
-    layout: "vertical",
-    margin: {
-      left: 10
-    }
-  }, /*#__PURE__*/React.createElement(Recharts.XAxis, {
-    type: "number",
-    tick: {
-      fill: '#4d6080',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false
-  }), /*#__PURE__*/React.createElement(Recharts.YAxis, {
-    type: "category",
-    dataKey: "name",
-    tick: {
-      fill: '#8a9bb5',
-      fontSize: 11
-    },
-    axisLine: false,
-    tickLine: false,
-    width: 90
-  }), /*#__PURE__*/React.createElement(Recharts.Tooltip, {
-    contentStyle: {
-      background: '#1a2235',
-      border: '1px solid #1e2d47',
-      borderRadius: 8,
-      color: '#e8edf5'
-    }
-  }), /*#__PURE__*/React.createElement(Recharts.Bar, {
     dataKey: "\u0441\u043C\u0435\u043D\u044B",
-    fill: "#10b981",
-    radius: [0, 4, 4, 0]
-  }))))), /*#__PURE__*/React.createElement("div", {
+    labelKey: "name",
+    color: "#10b981",
+    height: 200,
+    horizontal: true
+  }) : /*#__PURE__*/React.createElement("div", {
+    className: "empty-state",
+    style: {
+      padding: '20px 0'
+    }
+  }, /*#__PURE__*/React.createElement("div", {
+    style: {
+      color: 'var(--text3)'
+    }
+  }, "\u041D\u0435\u0442 \u0434\u0430\u043D\u043D\u044B\u0445")))), /*#__PURE__*/React.createElement("div", {
     className: "card"
   }, /*#__PURE__*/React.createElement("div", {
     className: "card-title mb-16"
@@ -3368,18 +3621,18 @@ function App() {
     _useLS4 = _slicedToArray(_useLS3, 2),
     shifts = _useLS4[0],
     setShifts = _useLS4[1];
-  var _useState41 = useState('dashboard'),
-    _useState42 = _slicedToArray(_useState41, 2),
-    page = _useState42[0],
-    setPage = _useState42[1];
-  var _useState43 = useState([]),
-    _useState44 = _slicedToArray(_useState43, 2),
-    toasts = _useState44[0],
-    setToasts = _useState44[1];
-  var _useState45 = useState(false),
-    _useState46 = _slicedToArray(_useState45, 2),
-    sidebarOpen = _useState46[0],
-    setSidebarOpen = _useState46[1];
+  var _useState47 = useState('dashboard'),
+    _useState48 = _slicedToArray(_useState47, 2),
+    page = _useState48[0],
+    setPage = _useState48[1];
+  var _useState49 = useState([]),
+    _useState50 = _slicedToArray(_useState49, 2),
+    toasts = _useState50[0],
+    setToasts = _useState50[1];
+  var _useState51 = useState(false),
+    _useState52 = _slicedToArray(_useState51, 2),
+    sidebarOpen = _useState52[0],
+    setSidebarOpen = _useState52[1];
 
   // Seed defaults if empty
   useEffect(function () {
