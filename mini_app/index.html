@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Handover Pro</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<style>
+:root {
+  --tg-bg: var(--tg-theme-bg-color, #ffffff);
+  --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #f1f1f1);
+  --tg-text: var(--tg-theme-text-color, #000000);
+  --tg-hint: var(--tg-theme-hint-color, #999999);
+  --tg-link: var(--tg-theme-link-color, #2481cc);
+  --tg-button: var(--tg-theme-button-color, #2481cc);
+  --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
+  --accent: #1a3a5c;
+  --accent2: #2481cc;
+  --danger: #e53e3e;
+  --warn: #d69e2e;
+  --success: #38a169;
+  --card-radius: 16px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { height: 100%; overflow: hidden; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  background: var(--tg-secondary-bg);
+  color: var(--tg-text);
+  font-size: 16px;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ─── SCREEN CONTAINER ─────────────────────────────────────────── */
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: calc(72px + var(--safe-bottom));
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ─── BOTTOM NAV ───────────────────────────────────────────────── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0; right: 0;
+  background: var(--tg-bg);
+  border-top: 1px solid rgba(0,0,0,0.08);
+  display: flex;
+  padding-bottom: var(--safe-bottom);
+  z-index: 100;
+}
+
+.nav-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px 4px 8px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  border: none;
+  background: none;
+  color: var(--tg-hint);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.nav-tab.active { color: var(--tg-button); }
+.nav-tab svg { width: 24px; height: 24px; }
+
+/* ─── HOME SCREEN ──────────────────────────────────────────────── */
+.home-hero {
+  background: var(--tg-button);
+  color: white;
+  padding: 24px 20px 28px;
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.home-hero::after {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 180px; height: 180px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 50%;
+}
+
+.hero-greeting { font-size: 14px; opacity: 0.8; margin-bottom: 4px; }
+.hero-name { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+.hero-stats { display: flex; gap: 16px; }
+.hero-stat { }
+.hero-stat .num { font-size: 32px; font-weight: 800; line-height: 1; }
+.hero-stat .lbl { font-size: 11px; opacity: 0.75; margin-top: 2px; }
+
+.action-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 0 16px 16px;
+}
+
+.action-btn {
+  background: var(--tg-bg);
+  border: none;
+  border-radius: var(--card-radius);
+  padding: 16px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tg-text);
+  text-align: left;
+  transition: transform 0.12s, opacity 0.12s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.action-btn:active { transform: scale(0.96); opacity: 0.8; }
+.action-icon { font-size: 22px; }
+
+.section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--tg-hint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 0 16px 8px;
+}
+
+/* ─── SHIFT CARDS ──────────────────────────────────────────────── */
+.shift-card {
+  background: var(--tg-bg);
+  border-radius: var(--card-radius);
+  margin: 0 16px 10px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.12s;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.shift-card:active { transform: scale(0.98); }
+
+.shift-icon {
+  width: 44px; height: 44px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.shift-icon.open { background: #fef3c7; }
+.shift-icon.closed { background: #d1fae5; }
+.shift-icon.partial { background: #fff7ed; }
+
+.shift-info { flex: 1; min-width: 0; }
+.shift-obj { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shift-meta { font-size: 12px; color: var(--tg-hint); margin-top: 2px; }
+.shift-right { text-align: right; flex-shrink: 0; }
+.shift-m3 { font-size: 16px; font-weight: 700; color: var(--tg-button); }
+.shift-date { font-size: 11px; color: var(--tg-hint); margin-top: 2px; }
+
+/* ─── NEW SHIFT FORM ───────────────────────────────────────────── */
+.form-header {
+  background: var(--tg-button);
+  color: white;
+  padding: 20px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.step-indicator {
+  display: flex;
+  gap: 6px;
+  padding: 16px 20px 8px;
+}
+
+.step-dot {
+  height: 4px;
+  border-radius: 2px;
+  flex: 1;
+  background: rgba(0,0,0,0.12);
+  transition: background 0.3s;
+}
+.step-dot.active { background: var(--tg-button); }
+.step-dot.done { background: var(--success); }
+
+.form-section {
+  background: var(--tg-bg);
+  border-radius: var(--card-radius);
+  margin: 0 16px 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  gap: 12px;
+}
+
+.form-row:last-child { border-bottom: none; }
+
+.form-label {
+  font-size: 14px;
+  color: var(--tg-hint);
+  width: 90px;
+  flex-shrink: 0;
+}
+
+.form-input {
+  flex: 1;
+  border: none;
+  background: none;
+  font-size: 15px;
+  color: var(--tg-text);
+  font-family: inherit;
+  outline: none;
+  text-align: right;
+}
+
+.form-input::placeholder { color: var(--tg-hint); }
+
+.seg-control {
+  display: flex;
+  background: var(--tg-secondary-bg);
+  border-radius: 10px;
+  padding: 3px;
+  flex: 1;
+}
+
+.seg-btn {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 7px 4px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--tg-hint);
+  transition: all 0.2s;
+}
+.seg-btn.active {
+  background: var(--tg-bg);
+  color: var(--tg-text);
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+/* ─── CONSTRUCTION ITEM ─────────────────────────────────────────── */
+.construction-item {
+  background: var(--tg-bg);
+  border-radius: var(--card-radius);
+  margin: 0 16px 10px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  overflow: hidden;
+}
+
+.construction-header {
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--tg-bg);
+}
+
+.c-type-icon {
+  width: 38px; height: 38px;
+  background: #e8f0fe;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+}
+
+.c-title { font-size: 15px; font-weight: 600; }
+.c-marks { font-size: 12px; color: var(--tg-hint); }
+
+.c-body { padding: 0 16px 14px; }
+
+.status-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.status-chip {
+  flex: 1;
+  border: 1.5px solid rgba(0,0,0,0.1);
+  background: none;
+  border-radius: 8px;
+  padding: 8px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s;
+  color: var(--tg-hint);
+}
+
+.status-chip.selected-ok { border-color: var(--success); background: #f0fff4; color: var(--success); }
+.status-chip.selected-warn { border-color: var(--warn); background: #fffbeb; color: var(--warn); }
+.status-chip.selected-bad { border-color: var(--danger); background: #fff5f5; color: var(--danger); }
+
+/* ─── SWIPE CONFIRM BUTTON ──────────────────────────────────────── */
+.swipe-container {
+  margin: 20px 16px;
+  position: relative;
+  height: 56px;
+  background: rgba(36,129,204,0.12);
+  border-radius: 28px;
+  overflow: hidden;
+}
+
+.swipe-track {
+  position: absolute;
+  top: 4px; left: 4px; bottom: 4px;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--tg-button);
+  font-size: 14px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.swipe-thumb {
+  position: absolute;
+  top: 4px; left: 4px; bottom: 4px;
+  width: 48px;
+  background: var(--tg-button);
+  border-radius: 24px;
+  cursor: grab;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 20px;
+  user-select: none;
+  touch-action: none;
+  transition: width 0.3s ease;
+}
+
+.swipe-thumb.success {
+  width: calc(100% - 8px);
+  background: var(--success);
+  cursor: default;
+}
+
+/* ─── MAIN BUTTON ───────────────────────────────────────────────── */
+.main-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 0 16px 12px;
+  padding: 16px;
+  background: var(--tg-button);
+  color: var(--tg-button-text);
+  border: none;
+  border-radius: var(--card-radius);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.15s, transform 0.12s;
+  font-family: inherit;
+}
+
+.main-btn:active { opacity: 0.85; transform: scale(0.98); }
+.main-btn.secondary { background: var(--tg-secondary-bg); color: var(--tg-text); }
+.main-btn.danger { background: var(--danger); }
+
+/* ─── DETAIL SCREEN ─────────────────────────────────────────────── */
+.detail-hero {
+  background: var(--tg-button);
+  color: white;
+  padding: 20px;
+}
+
+.detail-hero h2 { font-size: 20px; font-weight: 700; }
+.detail-meta { font-size: 13px; opacity: 0.8; margin-top: 6px; }
+
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 16px;
+}
+
+.stat-card {
+  background: var(--tg-bg);
+  border-radius: 12px;
+  padding: 14px 10px;
+  text-align: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.stat-card .num { font-size: 26px; font-weight: 800; color: var(--tg-button); }
+.stat-card .lbl { font-size: 11px; color: var(--tg-hint); margin-top: 2px; }
+
+/* ─── HISTORY ───────────────────────────────────────────────────── */
+.filter-bar {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-bar::-webkit-scrollbar { display: none; }
+
+.filter-chip {
+  flex-shrink: 0;
+  padding: 7px 14px;
+  border-radius: 20px;
+  background: var(--tg-bg);
+  border: 1.5px solid rgba(0,0,0,0.1);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--tg-hint);
+  transition: all 0.15s;
+}
+
+.filter-chip.active {
+  background: var(--tg-button);
+  border-color: var(--tg-button);
+  color: white;
+}
+
+/* ─── PROFILE ───────────────────────────────────────────────────── */
+.profile-avatar {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  background: var(--tg-button);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px;
+  color: white;
+  margin: 24px auto 12px;
+}
+
+.profile-name {
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.profile-role {
+  text-align: center;
+  font-size: 14px;
+  color: var(--tg-hint);
+  margin-bottom: 20px;
+}
+
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+
+.list-item:last-child { border-bottom: none; }
+.list-item-icon { font-size: 20px; width: 28px; }
+.list-item-label { flex: 1; font-size: 15px; }
+.list-item-value { font-size: 14px; color: var(--tg-hint); }
+
+/* ─── LOADING ───────────────────────────────────────────────────── */
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  gap: 12px;
+  color: var(--tg-hint);
+}
+
+.spinner {
+  width: 32px; height: 32px;
+  border: 3px solid rgba(0,0,0,0.1);
+  border-top-color: var(--tg-button);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── EMPTY STATE ───────────────────────────────────────────────── */
+.empty {
+  text-align: center;
+  padding: 48px 20px;
+  color: var(--tg-hint);
+}
+.empty-icon { font-size: 48px; margin-bottom: 12px; }
+.empty-title { font-size: 17px; font-weight: 600; color: var(--tg-text); margin-bottom: 6px; }
+.empty-text { font-size: 14px; line-height: 1.5; }
+
+/* ─── PHOTO GRID ────────────────────────────────────────────────── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2px;
+  margin: 0 16px 16px;
+}
+.photo-thumb {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  object-fit: cover;
+  width: 100%;
+  background: var(--tg-secondary-bg);
+}
+
+/* ─── WARNING BADGE ─────────────────────────────────────────────── */
+.warn-badge {
+  background: #fff8e1;
+  border-left: 3px solid var(--warn);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  margin: 0 16px 10px;
+  font-size: 13px;
+  color: #7c5e00;
+}
+
+/* Back button */
+.back-btn {
+  padding: 16px 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: var(--tg-button);
+  font-size: 15px;
+  font-weight: 500;
+  background: none;
+  border: none;
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="screen" id="screen"></div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+</div>
+
+<script>
+// ─── FIREBASE INIT ─────────────────────────────────────────────────────────
+const firebaseConfig = {
+  apiKey: "AIzaSyDqgJATeMaylCJD-qNpxC2gdOi_WTozwAE",
+  authDomain: "handover-pro-276a5.firebaseapp.com",
+  databaseURL: "https://handover-pro-276a5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "handover-pro-276a5",
+  storageBucket: "handover-pro-276a5.firebasestorage.app",
+  messagingSenderId: "491227537547",
+  appId: "1:491227537547:web:11819b7e6167adf987348e"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ─── TELEGRAM ──────────────────────────────────────────────────────────────
+const tg = window.Telegram.WebApp;
+tg.ready();
+tg.expand();
+
+const haptic = tg.HapticFeedback;
+function hap(type = 'light') { try { haptic.impactOccurred(type); } catch(e){} }
+function hapNotify(type = 'success') { try { haptic.notificationOccurred(type); } catch(e){} }
+
+// ─── STATE ─────────────────────────────────────────────────────────────────
+let currentTab = 'home';
+let currentUser = null;
+let shifts = [];
+let historyFilter = 'all';
+let newShiftData = { object: '', block: '', floor: '', shift_type: 'day', constructions: [] };
+let currentShiftId = null;
+let prevTab = 'home';
+
+// ─── NAV TABS ──────────────────────────────────────────────────────────────
+const TABS = [
+  { id: 'home', label: 'Главная', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>` },
+  { id: 'shift', label: 'Смена', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>` },
+  { id: 'history', label: 'История', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>` },
+  { id: 'profile', label: 'Профиль', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>` },
+];
+
+function renderNav() {
+  const nav = document.getElementById('bottomNav');
+  nav.innerHTML = TABS.map(t => `
+    <button class="nav-tab ${currentTab === t.id ? 'active' : ''}" onclick="switchTab('${t.id}')">
+      ${t.icon}
+      <span>${t.label}</span>
+    </button>
+  `).join('');
+}
+
+function switchTab(tab) {
+  hap('light');
+  currentTab = tab;
+  renderNav();
+  render();
+}
+
+// ─── DATA LOADING ──────────────────────────────────────────────────────────
+async function loadUser() {
+  const tgUser = tg.initDataUnsafe?.user;
+  if (!tgUser) {
+    // Dev fallback
+    currentUser = { id: 'dev', name: 'Dev User', role: 'engineer', shift_type: 'day', telegram_id: 0 };
+    return;
+  }
+  
+  const snap = await db.ref('users').once('value');
+  const users = snap.val() || {};
+  for (const [uid, u] of Object.entries(users)) {
+    if (u.telegram_id === tgUser.id) {
+      currentUser = { ...u, id: uid };
+      return;
+    }
+  }
+  // Create new user
+  const ref = db.ref('users').push({
+    telegram_id: tgUser.id,
+    name: tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : ''),
+    username: tgUser.username || '',
+    role: 'engineer',
+    shift_type: 'day',
+  });
+  currentUser = { telegram_id: tgUser.id, name: tgUser.first_name, role: 'engineer', shift_type: 'day', id: ref.key };
+}
+
+async function loadShifts() {
+  if (!currentUser) return;
+  const snap = await db.ref('shifts').once('value');
+  const all = snap.val() || {};
+  const arr = Object.entries(all).map(([id, v]) => ({ ...v, id }));
+  arr.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+  shifts = currentUser.role === 'engineer'
+    ? arr.filter(s => s.engineer_id === currentUser.id)
+    : arr;
+}
+
+// ─── RENDER ────────────────────────────────────────────────────────────────
+async function render() {
+  const screen = document.getElementById('screen');
+  screen.innerHTML = '<div class="loading"><div class="spinner"></div><span>Загрузка...</span></div>';
+  await loadShifts();
+  
+  switch(currentTab) {
+    case 'home': renderHome(); break;
+    case 'shift': renderNewShift(); break;
+    case 'history': renderHistory(); break;
+    case 'profile': renderProfile(); break;
+  }
+}
+
+// ─── HOME ──────────────────────────────────────────────────────────────────
+function renderHome() {
+  const screen = document.getElementById('screen');
+  const openShifts = shifts.filter(s => s.status === 'open');
+  const totalM3 = shifts.reduce((a, s) => a + (s.constructions || []).reduce((b, c) => b + (c.concrete_plan_m3 || 0), 0), 0);
+  const shiftLabel = currentUser?.shift_type === 'night' ? '🌙 Ночная смена' : '☀️ Дневная смена';
+  
+  const recentCards = shifts.slice(0, 5).map(s => shiftCard(s)).join('');
+  
+  screen.innerHTML = `
+    <div class="home-hero">
+      <div class="hero-greeting">${shiftLabel}</div>
+      <div class="hero-name">${currentUser?.name || '—'}</div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <div class="num">${shifts.length}</div>
+          <div class="lbl">Смен</div>
+        </div>
+        <div class="hero-stat" style="margin-left:24px">
+          <div class="num">${Math.round(totalM3)}</div>
+          <div class="lbl">м³ бетона</div>
+        </div>
+        <div class="hero-stat" style="margin-left:24px">
+          <div class="num">${openShifts.length}</div>
+          <div class="lbl">Открытых</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="action-grid">
+      <button class="action-btn" onclick="switchTab('shift')">
+        <span class="action-icon">➕</span>
+        <span>Новая смена</span>
+      </button>
+      <button class="action-btn" onclick="switchTab('history')">
+        <span class="action-icon">📋</span>
+        <span>История</span>
+      </button>
+      <button class="action-btn" onclick="switchTab('history')">
+        <span class="action-icon">✅</span>
+        <span>Подтвердить</span>
+      </button>
+      <button class="action-btn" onclick="showReport()">
+        <span class="action-icon">📄</span>
+        <span>Отчёт</span>
+      </button>
+    </div>
+
+    <div class="section-title">Последние смены</div>
+    ${recentCards || `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Смен пока нет</div><div class="empty-text">Создайте первую смену</div></div>`}
+  `;
+}
+
+function shiftCard(s) {
+  const m3 = (s.constructions || []).reduce((a, c) => a + (c.concrete_plan_m3 || 0), 0);
+  const statusIcons = { open: '🟡', closed: '✅', partial: '⚠️', failed: '❌' };
+  const icon = statusIcons[s.status] || '⚪';
+  const shiftIcon = s.shift_type === 'night' ? '🌙' : '☀️';
+  const date = (s.created_at || '').slice(0, 10);
+  const constructCount = (s.constructions || []).length;
+  
+  return `
+    <div class="shift-card" onclick="showShiftDetail('${s.id}')">
+      <div class="shift-icon ${s.status}">${shiftIcon}</div>
+      <div class="shift-info">
+        <div class="shift-obj">${s.object_name || '—'}</div>
+        <div class="shift-meta">${icon} ${constructCount} конструкц. • ${s.engineer_name || '—'}</div>
+      </div>
+      <div class="shift-right">
+        <div class="shift-m3">${Math.round(m3)} м³</div>
+        <div class="shift-date">${date}</div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── SHIFT DETAIL ──────────────────────────────────────────────────────────
+function showShiftDetail(shiftId) {
+  hap('light');
+  prevTab = currentTab;
+  currentShiftId = shiftId;
+  const s = shifts.find(x => x.id === shiftId);
+  if (!s) return;
+  
+  const m3 = (s.constructions || []).reduce((a, c) => a + (c.concrete_plan_m3 || 0), 0);
+  const photos = s.photos || [];
+  const warnings = s.warnings || [];
+  const statusLabel = { open: '🟡 Открыта', closed: '✅ Закрыта', partial: '⚠️ Частично', failed: '❌ Не выполнено' }[s.status] || s.status;
+  
+  const constructionItems = (s.constructions || []).map(c => {
+    const marks = (c.marks || []).join(', ');
+    const typeIcon = { Колонна: '🏛', Стена: '🧱', Плита: '⬜', Балка: '▬', Фундамент: '🏗', Лестница: '🪜', Ригель: '—', Перемычка: '—' }[c.type] || '🔲';
+    const natLabel = { given: '✅ Дана', not_given: '❌ Не дана', will_be_night: '🌙 Ночью' }[c.nature_status] || '—';
+    const rebLabel = { accepted: '✅ Сдана', partial: '⚠️ Частично', not_accepted: '❌ Не сдана' }[c.rebar_status] || '—';
+    return `
+      <div class="construction-item">
+        <div class="construction-header">
+          <div class="c-type-icon">${typeIcon}</div>
+          <div>
+            <div class="c-title">${c.type}</div>
+            <div class="c-marks">${marks} • ${c.concrete_plan_m3 || 0} м³</div>
+          </div>
+        </div>
+        <div class="c-body">
+          <div style="display:flex;gap:12px;font-size:13px;">
+            <span>Натура: ${natLabel}</span>
+            <span>Арм: ${rebLabel}</span>
+          </div>
+          ${c.concrete_method ? `<div style="font-size:12px;color:var(--tg-hint);margin-top:4px">Подача: ${c.concrete_method}</div>` : ''}
+          ${c.comment ? `<div style="font-size:13px;margin-top:6px;color:var(--tg-hint)">${c.comment}</div>` : ''}
+        </div>
+      </div>`;
+  }).join('');
+  
+  const warningsHtml = warnings.length ? warnings.map(w => `<div class="warn-badge">⚠️ ${w}</div>`).join('') : '';
+  
+  const photosHtml = photos.length ? `
+    <div class="section-title">Фото (${photos.length})</div>
+    <div class="photo-grid">
+      ${photos.map(p => `<img class="photo-thumb" src="${p.url}" loading="lazy">`).join('')}
+    </div>` : '';
+  
+  const isOpen = s.status === 'open';
+  const canClose = isOpen && (currentUser?.id === s.engineer_id || ['supervisor','admin'].includes(currentUser?.role));
+  
+  document.getElementById('screen').innerHTML = `
+    <button class="back-btn" onclick="goBack()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      Назад
+    </button>
+    <div class="detail-hero">
+      <h2>${s.object_name || '—'}</h2>
+      <div class="detail-meta">
+        Блок ${s.block || '—'} • Этаж ${s.floor || '—'} • ${statusLabel}<br>
+        ${s.engineer_name || '—'} • ${(s.created_at||'').slice(0,16).replace('T',' ')}
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card"><div class="num">${(s.constructions||[]).length}</div><div class="lbl">Констр.</div></div>
+      <div class="stat-card"><div class="num">${Math.round(m3)}</div><div class="lbl">м³</div></div>
+      <div class="stat-card"><div class="num">${photos.length}</div><div class="lbl">Фото</div></div>
+    </div>
+    ${warningsHtml}
+    <div class="section-title" style="margin-bottom:4px">Конструкции</div>
+    ${constructionItems}
+    ${photosHtml}
+    ${canClose ? `
+      <div class="section-title">Действия</div>
+      <div id="swipeArea"></div>
+      <button class="main-btn secondary" onclick="downloadReport('${s.id}')">📄 Скачать отчёт</button>
+    ` : `<button class="main-btn secondary" onclick="downloadReport('${s.id}')">📄 Скачать отчёт</button>`}
+    <div style="height:20px"></div>
+  `;
+  
+  if (canClose) {
+    renderSwipeButton(s.id);
+  }
+}
+
+function goBack() {
+  hap('light');
+  currentShiftId = null;
+  render();
+}
+
+// ─── SWIPE BUTTON ──────────────────────────────────────────────────────────
+function renderSwipeButton(shiftId) {
+  const container = document.getElementById('swipeArea');
+  if (!container) return;
+  container.innerHTML = `
+    <div class="swipe-container" id="swipeContainer">
+      <div class="swipe-track">Потяните чтобы подтвердить →</div>
+      <div class="swipe-thumb" id="swipeThumb">→</div>
+    </div>
+  `;
+  
+  const thumb = document.getElementById('swipeThumb');
+  const cont = document.getElementById('swipeContainer');
+  let startX = 0, isDragging = false;
+  const maxX = cont.offsetWidth - thumb.offsetWidth - 8;
+  
+  function onStart(e) {
+    isDragging = true;
+    startX = (e.touches ? e.touches[0].clientX : e.clientX) - parseInt(thumb.style.left || 0);
+    hap('light');
+  }
+  
+  function onMove(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const x = Math.max(0, Math.min(maxX, (e.touches ? e.touches[0].clientX : e.clientX) - startX));
+    thumb.style.left = x + 'px';
+    if (x >= maxX * 0.85) {
+      thumb.style.opacity = '0.7';
+    }
+  }
+  
+  function onEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    const x = parseInt(thumb.style.left || 0);
+    if (x >= maxX * 0.85) {
+      thumb.classList.add('success');
+      thumb.innerHTML = '✓';
+      hapNotify('success');
+      setTimeout(() => closeShift(shiftId, 'closed'), 600);
+    } else {
+      thumb.style.left = '0px';
+      thumb.style.opacity = '1';
+    }
+  }
+  
+  thumb.addEventListener('mousedown', onStart);
+  thumb.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+async function closeShift(shiftId, status) {
+  await db.ref(`shifts/${shiftId}`).update({
+    status,
+    closed_at: new Date().toISOString(),
+    closed_by: currentUser?.id,
+  });
+  hapNotify('success');
+  tg.showAlert('✅ Смена подтверждена!');
+  await render();
+}
+
+// ─── NEW SHIFT FORM ─────────────────────────────────────────────────────────
+let newShiftStep = 1;
+let tempConstructions = [];
+
+function renderNewShift() {
+  newShiftData = { object_name: '', block: '', floor: '', shift_type: 'day', constructions: [] };
+  tempConstructions = [];
+  newShiftStep = 1;
+  renderShiftStep();
+}
+
+function renderShiftStep() {
+  const screen = document.getElementById('screen');
+  const steps = ['', 'Объект', 'Конструкции', 'Сводка'];
+  const stepDots = [1,2,3].map(i => `<div class="step-dot ${i < newShiftStep ? 'done' : i === newShiftStep ? 'active' : ''}"></div>`).join('');
+  
+  let content = '';
+  
+  if (newShiftStep === 1) {
+    content = `
+      <div class="step-indicator">${stepDots}</div>
+      <div class="section-title">Информация об объекте</div>
+      <div class="form-section">
+        <div class="form-row">
+          <span class="form-label">Объект</span>
+          <input class="form-input" id="inp-object" placeholder="Название объекта" value="${newShiftData.object_name}">
+        </div>
+        <div class="form-row">
+          <span class="form-label">Блок/секция</span>
+          <input class="form-input" id="inp-block" placeholder="Б-1" value="${newShiftData.block}">
+        </div>
+        <div class="form-row">
+          <span class="form-label">Этаж</span>
+          <input class="form-input" id="inp-floor" placeholder="5" value="${newShiftData.floor}" type="number">
+        </div>
+        <div class="form-row">
+          <span class="form-label">Смена</span>
+          <div class="seg-control">
+            <button class="seg-btn ${newShiftData.shift_type==='day'?'active':''}" onclick="setShiftType('day')">☀️ Дневная</button>
+            <button class="seg-btn ${newShiftData.shift_type==='night'?'active':''}" onclick="setShiftType('night')">🌙 Ночная</button>
+          </div>
+        </div>
+      </div>
+      <button class="main-btn" onclick="nextStep1()">Далее →</button>
+    `;
+  }
+  
+  else if (newShiftStep === 2) {
+    const cItems = tempConstructions.map((c, i) => {
+      const marks = (c.marks || []).join(', ');
+      return `
+        <div class="shift-card" style="margin-bottom:8px">
+          <div style="flex:1">
+            <div class="shift-obj">${c.type} (${marks})</div>
+            <div class="shift-meta">${c.concrete_plan_m3||0} м³ • ${c.concrete_method||'—'}</div>
+          </div>
+          <button onclick="removeConstruction(${i})" style="background:none;border:none;color:var(--danger);font-size:20px;cursor:pointer">✕</button>
+        </div>
+      `;
+    }).join('');
+    
+    content = `
+      <div class="step-indicator">${stepDots}</div>
+      <div class="section-title">Конструкции (${tempConstructions.length})</div>
+      ${cItems}
+      <div id="addConstructionForm">
+        <div class="form-section">
+          <div class="form-row">
+            <span class="form-label">Тип</span>
+            <select class="form-input" id="c-type" style="color:var(--tg-text)">
+              ${['Колонна','Стена','Плита','Балка','Фундамент','Лестница','Ригель','Перемычка'].map(t=>`<option>${t}</option>`).join('')}
+            </select>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Маркировки</span>
+            <input class="form-input" id="c-marks" placeholder="К-1, К-2, К-3">
+          </div>
+          <div class="form-row">
+            <span class="form-label">Бетон, м³</span>
+            <input class="form-input" id="c-m3" placeholder="45" type="number">
+          </div>
+          <div class="form-row">
+            <span class="form-label">Подача</span>
+            <select class="form-input" id="c-method" style="color:var(--tg-text)">
+              <option value="">—</option>
+              <option>насос</option><option>кран</option><option>вручную</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Натура</span>
+            <div class="seg-control">
+              <button class="seg-btn active" id="nat-given" onclick="selNat('given')">✅ Дана</button>
+              <button class="seg-btn" id="nat-not_given" onclick="selNat('not_given')">❌ Нет</button>
+              <button class="seg-btn" id="nat-will_be_night" onclick="selNat('will_be_night')">🌙</button>
+            </div>
+          </div>
+          <div class="form-row">
+            <span class="form-label">Арматура</span>
+            <div class="seg-control">
+              <button class="seg-btn active" id="reb-accepted" onclick="selReb('accepted')">✅ Сдана</button>
+              <button class="seg-btn" id="reb-partial" onclick="selReb('partial')">⚠️</button>
+              <button class="seg-btn" id="reb-not_accepted" onclick="selReb('not_accepted')">❌ Нет</button>
+            </div>
+          </div>
+        </div>
+        <button class="main-btn secondary" onclick="addConstruction()">+ Добавить конструкцию</button>
+      </div>
+      <button class="main-btn" onclick="nextStep2()" ${tempConstructions.length===0?'disabled style="opacity:0.5"':''}>Далее →</button>
+      <button class="main-btn secondary" onclick="prevStep()">← Назад</button>
+    `;
+  }
+  
+  else if (newShiftStep === 3) {
+    const m3 = tempConstructions.reduce((a,c) => a + (parseFloat(c.concrete_plan_m3)||0), 0);
+    const warnings = checkWarnings(tempConstructions);
+    const warnHtml = warnings.map(w => `<div class="warn-badge">⚠️ ${w}</div>`).join('');
+    const constSummary = tempConstructions.map(c => {
+      const marks = (c.marks||[]).join(', ');
+      return `<div class="list-item">
+        <span class="list-item-icon">🏛</span>
+        <span class="list-item-label">${c.type} (${marks})</span>
+        <span class="list-item-value">${c.concrete_plan_m3||0} м³</span>
+      </div>`;
+    }).join('');
+    
+    content = `
+      <div class="step-indicator">${stepDots}</div>
+      <div class="section-title">Сводка смены</div>
+      <div class="form-section">
+        <div class="list-item"><span class="list-item-icon">🏗</span><span class="list-item-label">Объект</span><span class="list-item-value">${newShiftData.object_name||'—'}</span></div>
+        <div class="list-item"><span class="list-item-icon">🏢</span><span class="list-item-label">Блок / Этаж</span><span class="list-item-value">${newShiftData.block||'—'} / ${newShiftData.floor||'—'}</span></div>
+        <div class="list-item"><span class="list-item-icon">⏱</span><span class="list-item-label">Смена</span><span class="list-item-value">${newShiftData.shift_type==='day'?'☀️ Дневная':'🌙 Ночная'}</span></div>
+        <div class="list-item"><span class="list-item-icon">🔲</span><span class="list-item-label">Конструкций</span><span class="list-item-value">${tempConstructions.length}</span></div>
+        <div class="list-item"><span class="list-item-icon">📊</span><span class="list-item-label">Итого бетон</span><span class="list-item-value">${Math.round(m3)} м³</span></div>
+        ${constSummary}
+      </div>
+      ${warnHtml}
+      <div id="swipeCreateArea"></div>
+      <button class="main-btn secondary" onclick="prevStep()">← Изменить</button>
+      <div style="height:20px"></div>
+    `;
+  }
+  
+  screen.innerHTML = `
+    <div class="form-header">${newShiftStep===1?'➕ Новая смена':newShiftStep===2?'🏗 Конструкции':'📋 Подтверждение'}</div>
+    ${content}
+  `;
+  
+  if (newShiftStep === 3) {
+    renderCreateSwipe();
+  }
+  
+  // Init selected states
+  window._natSelected = 'given';
+  window._rebSelected = 'accepted';
+}
+
+function setShiftType(type) {
+  newShiftData.shift_type = type;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+  renderShiftStep();
+}
+
+function selNat(val) {
+  window._natSelected = val;
+  ['given','not_given','will_be_night'].forEach(v => {
+    const el = document.getElementById('nat-'+v);
+    if(el) el.classList.toggle('active', v===val);
+  });
+}
+
+function selReb(val) {
+  window._rebSelected = val;
+  ['accepted','partial','not_accepted'].forEach(v => {
+    const el = document.getElementById('reb-'+v);
+    if(el) el.classList.toggle('active', v===val);
+  });
+}
+
+function nextStep1() {
+  const obj = document.getElementById('inp-object')?.value?.trim();
+  if (!obj) { tg.showAlert('Введите название объекта'); return; }
+  newShiftData.object_name = obj;
+  newShiftData.block = document.getElementById('inp-block')?.value?.trim() || '';
+  newShiftData.floor = document.getElementById('inp-floor')?.value?.trim() || '';
+  hap('medium');
+  newShiftStep = 2;
+  renderShiftStep();
+}
+
+function nextStep2() {
+  if (tempConstructions.length === 0) { tg.showAlert('Добавьте хотя бы одну конструкцию'); return; }
+  hap('medium');
+  newShiftStep = 3;
+  renderShiftStep();
+}
+
+function prevStep() {
+  hap('light');
+  newShiftStep = Math.max(1, newShiftStep - 1);
+  renderShiftStep();
+}
+
+function addConstruction() {
+  const type = document.getElementById('c-type')?.value;
+  const marksRaw = document.getElementById('c-marks')?.value || '';
+  const m3 = parseFloat(document.getElementById('c-m3')?.value) || 0;
+  const method = document.getElementById('c-method')?.value || '';
+  
+  const marks = marksRaw.split(/[,\s]+/).map(m => m.trim()).filter(Boolean);
+  if (marks.length === 0) marks.push(type[0] + '-1');
+  
+  tempConstructions.push({
+    type,
+    marks,
+    concrete_plan_m3: m3,
+    concrete_method: method,
+    nature_status: window._natSelected || 'given',
+    rebar_status: window._rebSelected || 'accepted',
+  });
+  hap('medium');
+  renderShiftStep();
+}
+
+function removeConstruction(i) {
+  hap('light');
+  tempConstructions.splice(i, 1);
+  renderShiftStep();
+}
+
+function checkWarnings(constructions) {
+  const w = [];
+  for (const c of constructions) {
+    const marks = (c.marks||[]).join(', ');
+    if (c.concrete_plan_m3 && c.nature_status === 'not_given')
+      w.push(`${c.type} (${marks}): натура не дана, заливка запланирована`);
+    if (c.concrete_plan_m3 && c.rebar_status === 'not_accepted')
+      w.push(`${c.type} (${marks}): арматура не сдана, заливка запланирована`);
+  }
+  return w;
+}
+
+function renderCreateSwipe() {
+  const area = document.getElementById('swipeCreateArea');
+  if (!area) return;
+  area.innerHTML = `
+    <div class="swipe-container" id="swipeCreateContainer">
+      <div class="swipe-track">Потяните чтобы создать смену →</div>
+      <div class="swipe-thumb" id="swipeCreateThumb">→</div>
+    </div>
+  `;
+  
+  const thumb = document.getElementById('swipeCreateThumb');
+  const cont = document.getElementById('swipeCreateContainer');
+  let startX = 0, isDragging = false;
+  
+  function onStart(e) {
+    isDragging = true;
+    startX = (e.touches ? e.touches[0].clientX : e.clientX) - parseInt(thumb.style.left || 0);
+    hap('light');
+  }
+  
+  function onMove(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const maxX = cont.offsetWidth - thumb.offsetWidth - 8;
+    const x = Math.max(0, Math.min(maxX, (e.touches ? e.touches[0].clientX : e.clientX) - startX));
+    thumb.style.left = x + 'px';
+  }
+  
+  function onEnd() {
+    if (!isDragging) return;
+    isDragging = false;
+    const maxX = cont.offsetWidth - thumb.offsetWidth - 8;
+    const x = parseInt(thumb.style.left || 0);
+    if (x >= maxX * 0.85) {
+      thumb.classList.add('success');
+      thumb.innerHTML = '✓';
+      hapNotify('success');
+      setTimeout(submitShift, 600);
+    } else {
+      thumb.style.left = '0px';
+    }
+  }
+  
+  thumb.addEventListener('mousedown', onStart);
+  thumb.addEventListener('touchstart', onStart, { passive: false });
+  document.addEventListener('mousemove', onMove);
+  document.addEventListener('touchmove', onMove, { passive: false });
+  document.addEventListener('mouseup', onEnd);
+  document.addEventListener('touchend', onEnd);
+}
+
+async function submitShift() {
+  const shiftData = {
+    ...newShiftData,
+    constructions: tempConstructions,
+    engineer_id: currentUser?.id,
+    engineer_name: currentUser?.name,
+    status: 'open',
+    created_at: new Date().toISOString(),
+    photos: [],
+    warnings: checkWarnings(tempConstructions),
+  };
+  
+  try {
+    await db.ref('shifts').push(shiftData);
+    hapNotify('success');
+    tg.showAlert('✅ Смена создана!');
+    currentTab = 'home';
+    renderNav();
+    await render();
+  } catch(e) {
+    tg.showAlert('❌ Ошибка создания смены: ' + e.message);
+  }
+}
+
+// ─── HISTORY ───────────────────────────────────────────────────────────────
+function renderHistory() {
+  const screen = document.getElementById('screen');
+  
+  let filtered = shifts;
+  if (historyFilter === 'open') filtered = shifts.filter(s => s.status === 'open');
+  else if (historyFilter === 'closed') filtered = shifts.filter(s => s.status === 'closed');
+  else if (historyFilter === 'day') filtered = shifts.filter(s => s.shift_type === 'day');
+  else if (historyFilter === 'night') filtered = shifts.filter(s => s.shift_type === 'night');
+  
+  const chips = [
+    { id: 'all', label: 'Все' },
+    { id: 'open', label: '🟡 Открытые' },
+    { id: 'closed', label: '✅ Закрытые' },
+    { id: 'day', label: '☀️ Дневные' },
+    { id: 'night', label: '🌙 Ночные' },
+  ].map(c => `<div class="filter-chip ${historyFilter===c.id?'active':''}" onclick="setFilter('${c.id}')">${c.label}</div>`).join('');
+  
+  const cards = filtered.map(s => shiftCard(s)).join('');
+  
+  screen.innerHTML = `
+    <div class="form-header">История смен</div>
+    <div class="filter-bar">${chips}</div>
+    ${cards || `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Нет смен</div><div class="empty-text">Попробуйте другой фильтр</div></div>`}
+  `;
+}
+
+function setFilter(f) {
+  hap('light');
+  historyFilter = f;
+  renderHistory();
+}
+
+// ─── PROFILE ───────────────────────────────────────────────────────────────
+function renderProfile() {
+  const screen = document.getElementById('screen');
+  const u = currentUser;
+  const totalShifts = shifts.length;
+  const totalM3 = Math.round(shifts.reduce((a,s) => a + (s.constructions||[]).reduce((b,c)=>b+(c.concrete_plan_m3||0),0), 0));
+  const confirmed = shifts.filter(s => s.status === 'closed').length;
+  const roleLabel = { admin: '👑 Администратор', supervisor: '🏗 Прораб', engineer: '👷 Инженер' }[u?.role] || 'Инженер';
+  const shiftLabel = u?.shift_type === 'night' ? '🌙 Ночная' : '☀️ Дневная';
+  
+  screen.innerHTML = `
+    <div class="profile-avatar">${(u?.name||'?')[0].toUpperCase()}</div>
+    <div class="profile-name">${u?.name || '—'}</div>
+    <div class="profile-role">${roleLabel} • ${shiftLabel} смена</div>
+    
+    <div class="stats-row">
+      <div class="stat-card"><div class="num">${totalShifts}</div><div class="lbl">Смен</div></div>
+      <div class="stat-card"><div class="num">${totalM3}</div><div class="lbl">м³</div></div>
+      <div class="stat-card"><div class="num">${confirmed}</div><div class="lbl">Подтверждено</div></div>
+    </div>
+    
+    <div class="section-title">Настройки</div>
+    <div class="form-section">
+      <div class="list-item">
+        <span class="list-item-icon">⏱</span>
+        <span class="list-item-label">Тип смены</span>
+        <div class="seg-control" style="max-width:160px">
+          <button class="seg-btn ${u?.shift_type==='day'?'active':''}" onclick="changeShiftType('day')">☀️</button>
+          <button class="seg-btn ${u?.shift_type==='night'?'active':''}" onclick="changeShiftType('night')">🌙</button>
+        </div>
+      </div>
+      <div class="list-item">
+        <span class="list-item-icon">👤</span>
+        <span class="list-item-label">Telegram ID</span>
+        <span class="list-item-value">${u?.telegram_id || '—'}</span>
+      </div>
+      <div class="list-item">
+        <span class="list-item-icon">🆔</span>
+        <span class="list-item-label">User ID</span>
+        <span class="list-item-value" style="font-size:11px">${u?.id?.slice(0,12) || '—'}</span>
+      </div>
+    </div>
+    <div style="height:20px"></div>
+  `;
+}
+
+async function changeShiftType(type) {
+  hap('medium');
+  if (!currentUser?.id) return;
+  currentUser.shift_type = type;
+  await db.ref(`users/${currentUser.id}`).update({ shift_type: type });
+  renderProfile();
+}
+
+// ─── REPORT ────────────────────────────────────────────────────────────────
+function downloadReport(shiftId) {
+  hap('light');
+  tg.showAlert('📄 Отчёт будет отправлен в чат ботом. Используйте команду /report ' + shiftId);
+}
+
+function showReport() {
+  if (shifts.length === 0) {
+    tg.showAlert('Нет смен для отчёта');
+    return;
+  }
+  showShiftDetail(shifts[0].id);
+}
+
+// ─── INIT ──────────────────────────────────────────────────────────────────
+async function init() {
+  renderNav();
+  document.getElementById('screen').innerHTML = '<div class="loading"><div class="spinner"></div><span>Инициализация...</span></div>';
+  await loadUser();
+  await render();
+}
+
+init();
+</script>
+</body>
+</html>
