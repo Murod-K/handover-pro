@@ -5,1298 +5,1071 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Handover Pro</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
 <style>
 :root {
-  --tg-bg: var(--tg-theme-bg-color, #ffffff);
-  --tg-secondary-bg: var(--tg-theme-secondary-bg-color, #f1f1f1);
-  --tg-text: var(--tg-theme-text-color, #000000);
-  --tg-hint: var(--tg-theme-hint-color, #999999);
-  --tg-link: var(--tg-theme-link-color, #2481cc);
-  --tg-button: var(--tg-theme-button-color, #2481cc);
-  --tg-button-text: var(--tg-theme-button-text-color, #ffffff);
-  --accent: #1a3a5c;
-  --accent2: #2481cc;
-  --danger: #e53e3e;
-  --warn: #d69e2e;
-  --success: #38a169;
-  --card-radius: 16px;
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --bg2: var(--tg-theme-secondary-bg-color, #f2f2f7);
+  --text: var(--tg-theme-text-color, #000000);
+  --hint: var(--tg-theme-hint-color, #8e8e93);
+  --btn: var(--tg-theme-button-color, #007aff);
+  --btn-text: var(--tg-theme-button-text-color, #ffffff);
+  --ok: #34c759; --warn: #ff9500; --danger: #ff3b30;
+  --r: 14px; --safe: env(safe-area-inset-bottom, 0px);
 }
-
-* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-html, body { height: 100%; overflow: hidden; }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
-  background: var(--tg-secondary-bg);
-  color: var(--tg-text);
-  font-size: 16px;
-}
-
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  height: 100dvh;
-}
-
-/* ─── SCREEN CONTAINER ─────────────────────────────────────────── */
-.screen {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding-bottom: calc(72px + var(--safe-bottom));
-  -webkit-overflow-scrolling: touch;
-}
-
-/* ─── BOTTOM NAV ───────────────────────────────────────────────── */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0; right: 0;
-  background: var(--tg-bg);
-  border-top: 1px solid rgba(0,0,0,0.08);
-  display: flex;
-  padding-bottom: var(--safe-bottom);
-  z-index: 100;
-}
-
-.nav-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  padding: 10px 4px 8px;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  border: none;
-  background: none;
-  color: var(--tg-hint);
-  font-size: 10px;
-  font-weight: 500;
-}
-
-.nav-tab.active { color: var(--tg-button); }
-.nav-tab svg { width: 24px; height: 24px; }
-
-/* ─── HOME SCREEN ──────────────────────────────────────────────── */
-.home-hero {
-  background: var(--tg-button);
-  color: white;
-  padding: 24px 20px 28px;
-  margin-bottom: 12px;
-  position: relative;
-  overflow: hidden;
-}
-
-.home-hero::after {
-  content: '';
-  position: absolute;
-  top: -40px; right: -40px;
-  width: 180px; height: 180px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 50%;
-}
-
-.hero-greeting { font-size: 14px; opacity: 0.8; margin-bottom: 4px; }
-.hero-name { font-size: 22px; font-weight: 700; margin-bottom: 20px; }
-.hero-stats { display: flex; gap: 16px; }
-.hero-stat { }
-.hero-stat .num { font-size: 32px; font-weight: 800; line-height: 1; }
-.hero-stat .lbl { font-size: 11px; opacity: 0.75; margin-top: 2px; }
-
-.action-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding: 0 16px 16px;
-}
-
-.action-btn {
-  background: var(--tg-bg);
-  border: none;
-  border-radius: var(--card-radius);
-  padding: 16px 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--tg-text);
-  text-align: left;
-  transition: transform 0.12s, opacity 0.12s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.action-btn:active { transform: scale(0.96); opacity: 0.8; }
-.action-icon { font-size: 22px; }
-
-.section-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--tg-hint);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 0 16px 8px;
-}
-
-/* ─── SHIFT CARDS ──────────────────────────────────────────────── */
-.shift-card {
-  background: var(--tg-bg);
-  border-radius: var(--card-radius);
-  margin: 0 16px 10px;
-  padding: 14px 16px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  cursor: pointer;
-  transition: transform 0.12s;
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.shift-card:active { transform: scale(0.98); }
-
-.shift-icon {
-  width: 44px; height: 44px;
-  border-radius: 12px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px;
-  flex-shrink: 0;
-}
-
-.shift-icon.open { background: #fef3c7; }
-.shift-icon.closed { background: #d1fae5; }
-.shift-icon.partial { background: #fff7ed; }
-
-.shift-info { flex: 1; min-width: 0; }
-.shift-obj { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.shift-meta { font-size: 12px; color: var(--tg-hint); margin-top: 2px; }
-.shift-right { text-align: right; flex-shrink: 0; }
-.shift-m3 { font-size: 16px; font-weight: 700; color: var(--tg-button); }
-.shift-date { font-size: 11px; color: var(--tg-hint); margin-top: 2px; }
-
-/* ─── NEW SHIFT FORM ───────────────────────────────────────────── */
-.form-header {
-  background: var(--tg-button);
-  color: white;
-  padding: 20px;
-  font-size: 20px;
-  font-weight: 700;
-}
-
-.step-indicator {
-  display: flex;
-  gap: 6px;
-  padding: 16px 20px 8px;
-}
-
-.step-dot {
-  height: 4px;
-  border-radius: 2px;
-  flex: 1;
-  background: rgba(0,0,0,0.12);
-  transition: background 0.3s;
-}
-.step-dot.active { background: var(--tg-button); }
-.step-dot.done { background: var(--success); }
-
-.form-section {
-  background: var(--tg-bg);
-  border-radius: var(--card-radius);
-  margin: 0 16px 12px;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.form-row {
-  display: flex;
-  align-items: center;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  gap: 12px;
-}
-
-.form-row:last-child { border-bottom: none; }
-
-.form-label {
-  font-size: 14px;
-  color: var(--tg-hint);
-  width: 90px;
-  flex-shrink: 0;
-}
-
-.form-input {
-  flex: 1;
-  border: none;
-  background: none;
-  font-size: 15px;
-  color: var(--tg-text);
-  font-family: inherit;
-  outline: none;
-  text-align: right;
-}
-
-.form-input::placeholder { color: var(--tg-hint); }
-
-.seg-control {
-  display: flex;
-  background: var(--tg-secondary-bg);
-  border-radius: 10px;
-  padding: 3px;
-  flex: 1;
-}
-
-.seg-btn {
-  flex: 1;
-  border: none;
-  background: none;
-  padding: 7px 4px;
-  font-size: 13px;
-  font-weight: 500;
-  border-radius: 8px;
-  cursor: pointer;
-  color: var(--tg-hint);
-  transition: all 0.2s;
-}
-.seg-btn.active {
-  background: var(--tg-bg);
-  color: var(--tg-text);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-}
-
-/* ─── CONSTRUCTION ITEM ─────────────────────────────────────────── */
-.construction-item {
-  background: var(--tg-bg);
-  border-radius: var(--card-radius);
-  margin: 0 16px 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  overflow: hidden;
-}
-
-.construction-header {
-  padding: 14px 16px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--tg-bg);
-}
-
-.c-type-icon {
-  width: 38px; height: 38px;
-  background: #e8f0fe;
-  border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-}
-
-.c-title { font-size: 15px; font-weight: 600; }
-.c-marks { font-size: 12px; color: var(--tg-hint); }
-
-.c-body { padding: 0 16px 14px; }
-
-.status-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 8px;
-}
-
-.status-chip {
-  flex: 1;
-  border: 1.5px solid rgba(0,0,0,0.1);
-  background: none;
-  border-radius: 8px;
-  padding: 8px 4px;
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.15s;
-  color: var(--tg-hint);
-}
-
-.status-chip.selected-ok { border-color: var(--success); background: #f0fff4; color: var(--success); }
-.status-chip.selected-warn { border-color: var(--warn); background: #fffbeb; color: var(--warn); }
-.status-chip.selected-bad { border-color: var(--danger); background: #fff5f5; color: var(--danger); }
-
-/* ─── SWIPE CONFIRM BUTTON ──────────────────────────────────────── */
-.swipe-container {
-  margin: 20px 16px;
-  position: relative;
-  height: 56px;
-  background: rgba(36,129,204,0.12);
-  border-radius: 28px;
-  overflow: hidden;
-}
-
-.swipe-track {
-  position: absolute;
-  top: 4px; left: 4px; bottom: 4px;
-  right: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--tg-button);
-  font-size: 14px;
-  font-weight: 600;
-  pointer-events: none;
-}
-
-.swipe-thumb {
-  position: absolute;
-  top: 4px; left: 4px; bottom: 4px;
-  width: 48px;
-  background: var(--tg-button);
-  border-radius: 24px;
-  cursor: grab;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-size: 20px;
-  user-select: none;
-  touch-action: none;
-  transition: width 0.3s ease;
-}
-
-.swipe-thumb.success {
-  width: calc(100% - 8px);
-  background: var(--success);
-  cursor: default;
-}
-
-/* ─── MAIN BUTTON ───────────────────────────────────────────────── */
-.main-btn {
-  display: block;
-  width: calc(100% - 32px);
-  margin: 0 16px 12px;
-  padding: 16px;
-  background: var(--tg-button);
-  color: var(--tg-button-text);
-  border: none;
-  border-radius: var(--card-radius);
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  text-align: center;
-  transition: opacity 0.15s, transform 0.12s;
-  font-family: inherit;
-}
-
-.main-btn:active { opacity: 0.85; transform: scale(0.98); }
-.main-btn.secondary { background: var(--tg-secondary-bg); color: var(--tg-text); }
-.main-btn.danger { background: var(--danger); }
-
-/* ─── DETAIL SCREEN ─────────────────────────────────────────────── */
-.detail-hero {
-  background: var(--tg-button);
-  color: white;
-  padding: 20px;
-}
-
-.detail-hero h2 { font-size: 20px; font-weight: 700; }
-.detail-meta { font-size: 13px; opacity: 0.8; margin-top: 6px; }
-
-.stats-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  padding: 16px;
-}
-
-.stat-card {
-  background: var(--tg-bg);
-  border-radius: 12px;
-  padding: 14px 10px;
-  text-align: center;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-
-.stat-card .num { font-size: 26px; font-weight: 800; color: var(--tg-button); }
-.stat-card .lbl { font-size: 11px; color: var(--tg-hint); margin-top: 2px; }
-
-/* ─── HISTORY ───────────────────────────────────────────────────── */
-.filter-bar {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.filter-bar::-webkit-scrollbar { display: none; }
-
-.filter-chip {
-  flex-shrink: 0;
-  padding: 7px 14px;
-  border-radius: 20px;
-  background: var(--tg-bg);
-  border: 1.5px solid rgba(0,0,0,0.1);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  color: var(--tg-hint);
-  transition: all 0.15s;
-}
-
-.filter-chip.active {
-  background: var(--tg-button);
-  border-color: var(--tg-button);
-  color: white;
-}
-
-/* ─── PROFILE ───────────────────────────────────────────────────── */
-.profile-avatar {
-  width: 80px; height: 80px;
-  border-radius: 50%;
-  background: var(--tg-button);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 32px;
-  color: white;
-  margin: 24px auto 12px;
-}
-
-.profile-name {
-  text-align: center;
-  font-size: 20px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.profile-role {
-  text-align: center;
-  font-size: 14px;
-  color: var(--tg-hint);
-  margin-bottom: 20px;
-}
-
-.list-item {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-}
-
-.list-item:last-child { border-bottom: none; }
-.list-item-icon { font-size: 20px; width: 28px; }
-.list-item-label { flex: 1; font-size: 15px; }
-.list-item-value { font-size: 14px; color: var(--tg-hint); }
-
-/* ─── LOADING ───────────────────────────────────────────────────── */
-.loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 200px;
-  gap: 12px;
-  color: var(--tg-hint);
-}
-
-.spinner {
-  width: 32px; height: 32px;
-  border: 3px solid rgba(0,0,0,0.1);
-  border-top-color: var(--tg-button);
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ─── EMPTY STATE ───────────────────────────────────────────────── */
-.empty {
-  text-align: center;
-  padding: 48px 20px;
-  color: var(--tg-hint);
-}
-.empty-icon { font-size: 48px; margin-bottom: 12px; }
-.empty-title { font-size: 17px; font-weight: 600; color: var(--tg-text); margin-bottom: 6px; }
-.empty-text { font-size: 14px; line-height: 1.5; }
-
-/* ─── PHOTO GRID ────────────────────────────────────────────────── */
-.photo-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 2px;
-  margin: 0 16px 16px;
-}
-.photo-thumb {
-  aspect-ratio: 1;
-  border-radius: 8px;
-  object-fit: cover;
-  width: 100%;
-  background: var(--tg-secondary-bg);
-}
-
-/* ─── WARNING BADGE ─────────────────────────────────────────────── */
-.warn-badge {
-  background: #fff8e1;
-  border-left: 3px solid var(--warn);
-  border-radius: 0 8px 8px 0;
-  padding: 10px 14px;
-  margin: 0 16px 10px;
-  font-size: 13px;
-  color: #7c5e00;
-}
-
-/* Back button */
-.back-btn {
-  padding: 16px 20px 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  color: var(--tg-button);
-  font-size: 15px;
-  font-weight: 500;
-  background: none;
-  border: none;
-}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',sans-serif;background:var(--bg2);color:var(--text)}
+#app{display:flex;flex-direction:column;height:100vh;height:100dvh}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding-bottom:calc(68px + var(--safe));-webkit-overflow-scrolling:touch}
+
+/* NAV */
+.nav{position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:1px solid rgba(0,0,0,0.1);display:flex;padding-bottom:var(--safe);z-index:100}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 4px 7px;border:none;background:none;color:var(--hint);font-size:10px;font-weight:500;cursor:pointer}
+.nav-btn.on{color:var(--btn)}
+.nav-btn svg{width:22px;height:22px}
+
+/* HERO */
+.hero{background:var(--btn);color:#fff;padding:22px 20px 26px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;top:-30px;right:-30px;width:160px;height:160px;background:rgba(255,255,255,0.07);border-radius:50%}
+.hero-sub{font-size:13px;opacity:.75;margin-bottom:3px}
+.hero-name{font-size:21px;font-weight:700;margin-bottom:18px}
+.hero-stats{display:flex;gap:20px}
+.hstat .n{font-size:30px;font-weight:800;line-height:1}
+.hstat .l{font-size:11px;opacity:.7;margin-top:2px}
+
+/* CARDS */
+.card{background:var(--bg);border-radius:var(--r);box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.section{font-size:12px;font-weight:700;color:var(--hint);text-transform:uppercase;letter-spacing:.5px;padding:14px 16px 6px}
+
+/* ACTION GRID */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 16px 14px}
+.act{background:var(--bg);border:none;border-radius:var(--r);padding:15px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;font-weight:600;color:var(--text);box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s}
+.act:active{transform:scale(.96)}
+.act-icon{font-size:22px}
+
+/* SHIFT CARD */
+.scard{background:var(--bg);border-radius:var(--r);margin:0 16px 10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);cursor:pointer;display:flex;align-items:center;gap:14px;transition:transform .12s}
+.scard:active{transform:scale(.98)}
+.sicon{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.sicon.open{background:#fff8e1}.sicon.closed{background:#e8f5e9}.sicon.partial{background:#fff3e0}
+.sinfo{flex:1;min-width:0}
+.sobj{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.smeta{font-size:12px;color:var(--hint);margin-top:2px}
+.sright{text-align:right;flex-shrink:0}
+.sm3{font-size:16px;font-weight:700;color:var(--btn)}
+.sdate{font-size:11px;color:var(--hint);margin-top:2px}
+
+/* FORM */
+.fhdr{background:var(--btn);color:#fff;padding:18px 20px;font-size:19px;font-weight:700}
+.steps{display:flex;gap:5px;padding:14px 16px 8px}
+.sdot{height:4px;border-radius:2px;flex:1;background:rgba(0,0,0,.1);transition:background .3s}
+.sdot.on{background:var(--btn)}.sdot.done{background:var(--ok)}
+.fsec{background:var(--bg);border-radius:var(--r);margin:0 16px 12px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.frow{display:flex;align-items:center;padding:13px 16px;border-bottom:1px solid rgba(0,0,0,.05);gap:10px}
+.frow:last-child{border-bottom:none}
+.flbl{font-size:14px;color:var(--hint);width:100px;flex-shrink:0}
+.finp{flex:1;border:none;background:none;font-size:15px;color:var(--text);font-family:inherit;outline:none;text-align:right}
+.finp::placeholder{color:var(--hint)}
+
+/* SEG */
+.seg{display:flex;background:var(--bg2);border-radius:9px;padding:2px;flex:1}
+.sbtn{flex:1;border:none;background:none;padding:7px 3px;font-size:12px;font-weight:500;border-radius:7px;cursor:pointer;color:var(--hint);transition:all .2s}
+.sbtn.on{background:var(--bg);color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:7px;padding:10px 16px}
+.chip{padding:7px 13px;border-radius:20px;border:1.5px solid rgba(0,0,0,.1);font-size:13px;font-weight:500;cursor:pointer;color:var(--hint);background:var(--bg);transition:all .15s}
+.chip.on-ok{border-color:var(--ok);background:#f0fff4;color:var(--ok)}
+.chip.on-warn{border-color:var(--warn);background:#fffbeb;color:var(--warn)}
+.chip.on-bad{border-color:var(--danger);background:#fff5f5;color:var(--danger)}
+.chip.active{background:var(--btn);border-color:var(--btn);color:#fff}
+
+/* DEFECTS */
+.defect-list{padding:0 16px 12px;display:flex;flex-direction:column;gap:6px}
+.defect-chip{padding:9px 14px;border-radius:10px;border:1.5px solid rgba(0,0,0,.1);font-size:13px;cursor:pointer;color:var(--text);background:var(--bg);display:flex;align-items:center;gap:8px;transition:all .15s}
+.defect-chip.sel{border-color:var(--danger);background:#fff5f5;color:var(--danger)}
+.defect-chip .dicon{font-size:16px}
+
+/* SWIPE BTN */
+.swipe-wrap{margin:16px 16px;position:relative;height:54px;background:rgba(0,122,255,.1);border-radius:27px;overflow:hidden}
+.swipe-lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:var(--btn);font-size:14px;font-weight:600;pointer-events:none}
+.swipe-thumb{position:absolute;top:4px;left:4px;bottom:4px;width:46px;background:var(--btn);border-radius:23px;cursor:grab;display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;user-select:none;touch-action:none;transition:left .15s}
+.swipe-thumb.done{width:calc(100% - 8px);background:var(--ok);transition:width .3s}
+
+/* BTN */
+.btn{display:block;width:calc(100% - 32px);margin:0 16px 10px;padding:15px;background:var(--btn);color:var(--btn-text);border:none;border-radius:var(--r);font-size:16px;font-weight:700;cursor:pointer;text-align:center;font-family:inherit;transition:opacity .15s,transform .12s}
+.btn:active{opacity:.85;transform:scale(.98)}
+.btn.sec{background:var(--bg2);color:var(--text)}
+.btn.red{background:var(--danger)}
+.btn:disabled{opacity:.4;pointer-events:none}
+
+/* BACK */
+.back{padding:14px 20px 0;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--btn);font-size:15px;font-weight:500;background:none;border:none}
+
+/* DETAIL */
+.dhero{background:var(--btn);color:#fff;padding:18px 20px}
+.dhero h2{font-size:19px;font-weight:700}
+.dmeta{font-size:13px;opacity:.8;margin-top:5px;line-height:1.6}
+.stats3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;padding:14px}
+.sc{background:var(--bg);border-radius:12px;padding:13px 10px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.sc .n{font-size:24px;font-weight:800;color:var(--btn)}
+.sc .l{font-size:11px;color:var(--hint);margin-top:2px}
+
+/* CONSTRUCT ITEM */
+.ci{background:var(--bg);border-radius:var(--r);margin:0 16px 10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.ci-hdr{padding:13px 16px;display:flex;align-items:center;gap:12px}
+.ci-icon{width:36px;height:36px;background:#e8f0fe;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.ci-title{font-size:15px;font-weight:600}
+.ci-marks{font-size:12px;color:var(--hint)}
+.ci-body{padding:0 16px 13px}
+.ci-row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--hint)}
+.ci-row span:last-child{color:var(--text);font-weight:500}
+
+/* WARN */
+.wbadge{background:#fff8e1;border-left:3px solid var(--warn);border-radius:0 8px 8px 0;padding:9px 14px;margin:0 16px 10px;font-size:13px;color:#7c5e00}
+
+/* FILTER */
+.fbar{display:flex;gap:7px;padding:11px 16px;overflow-x:auto;scrollbar-width:none}
+.fbar::-webkit-scrollbar{display:none}
+.fchip{flex-shrink:0;padding:6px 13px;border-radius:18px;background:var(--bg);border:1.5px solid rgba(0,0,0,.1);font-size:13px;font-weight:600;cursor:pointer;color:var(--hint);transition:all .15s}
+.fchip.on{background:var(--btn);border-color:var(--btn);color:#fff}
+
+/* PROFILE */
+.avatar{width:76px;height:76px;border-radius:50%;background:var(--btn);display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;margin:22px auto 10px}
+.pname{text-align:center;font-size:19px;font-weight:700;margin-bottom:3px}
+.prole{text-align:center;font-size:13px;color:var(--hint);margin-bottom:18px}
+.litem{display:flex;align-items:center;gap:13px;padding:13px 16px;border-bottom:1px solid rgba(0,0,0,.05)}
+.litem:last-child{border-bottom:none}
+.licon{font-size:19px;width:26px}
+.llbl{flex:1;font-size:15px}
+.lval{font-size:13px;color:var(--hint)}
+
+/* LOADING / EMPTY */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;gap:10px;color:var(--hint)}
+.spin{width:30px;height:30px;border:3px solid rgba(0,0,0,.1);border-top-color:var(--btn);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:44px 20px;color:var(--hint)}
+.empty-i{font-size:44px;margin-bottom:10px}
+.empty-t{font-size:16px;font-weight:600;color:var(--text);margin-bottom:5px}
+
+/* PENDING BADGE */
+.pending-badge{background:#fff3e0;border:1px solid var(--warn);border-radius:10px;margin:0 16px 10px;padding:12px 16px;display:flex;align-items:center;gap:10px}
+.pending-badge .pb-text{flex:1;font-size:14px;color:#7c5e00}
+.pending-badge .pb-btn{background:var(--btn);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer}
+
+/* AUTOCOMPLETE */
+.ac-list{background:var(--bg);border-radius:var(--r);margin:0 16px 12px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,.12)}
+.ac-item{padding:13px 16px;border-bottom:1px solid rgba(0,0,0,.05);cursor:pointer;font-size:15px;display:flex;align-items:center;gap:10px}
+.ac-item:last-child{border-bottom:none}
+.ac-item:active{background:var(--bg2)}
+.ac-new{color:var(--btn);font-weight:600}
+
+/* LANG BADGE */
+.lang-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.2);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:600;cursor:pointer}
+
+/* NOTE */
+.note-box{background:var(--bg);border-radius:var(--r);margin:0 16px 12px;box-shadow:0 1px 4px rgba(0,0,0,.07)}
+.note-ta{width:100%;border:none;background:none;font-size:15px;color:var(--text);font-family:inherit;outline:none;padding:14px 16px;resize:none;min-height:100px}
+.note-preview{padding:14px 16px;font-size:14px;line-height:1.6;color:var(--text);white-space:pre-wrap}
+
+/* STATUS */
+.status-row{display:flex;align-items:center;gap:8px;padding:4px 0}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-ok{background:var(--ok)}.dot-warn{background:var(--warn)}.dot-bad{background:var(--danger)}
+
+/* ADMIN */
+.user-card{background:var(--bg);border-radius:var(--r);margin:0 16px 10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:center;gap:12px}
+.user-av{width:38px;height:38px;border-radius:50%;background:var(--btn);display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;flex-shrink:0}
+.user-info{flex:1;min-width:0}
+.user-name{font-size:15px;font-weight:600}
+.user-meta{font-size:12px;color:var(--hint)}
+.user-actions{display:flex;gap:6px}
+.ua-btn{border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;cursor:pointer}
+.ua-approve{background:#e8f5e9;color:var(--ok)}
+.ua-reject{background:#fff5f5;color:var(--danger)}
+.ua-role{background:var(--bg2);color:var(--hint)}
+
+/* PHOTO GRID */
+.pgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:2px;margin:0 16px 14px}
+.pthumb{aspect-ratio:1;border-radius:7px;object-fit:cover;width:100%;background:var(--bg2)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:flex-end}
+.modal{background:var(--bg);border-radius:var(--r) var(--r) 0 0;width:100%;padding:20px 16px;padding-bottom:calc(20px + var(--safe));max-height:80vh;overflow-y:auto}
+.modal-title{font-size:17px;font-weight:700;margin-bottom:14px}
+.modal-input{width:100%;border:1.5px solid rgba(0,0,0,.12);border-radius:10px;padding:12px 14px;font-size:15px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;margin-bottom:10px}
+.modal-input:focus{border-color:var(--btn)}
+
+/* NIGHT CHECKLIST */
+.cl-item{background:var(--bg);border-radius:var(--r);margin:0 16px 8px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.07);display:flex;align-items:flex-start;gap:12px}
+.cl-cb{width:22px;height:22px;border-radius:6px;border:2px solid rgba(0,0,0,.15);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;transition:all .2s}
+.cl-cb.checked{background:var(--ok);border-color:var(--ok);color:#fff}
+.cl-info{flex:1}
+.cl-title{font-size:14px;font-weight:600}
+.cl-sub{font-size:12px;color:var(--hint);margin-top:2px}
+.cl-add-btn{background:none;border:1.5px dashed rgba(0,0,0,.15);border-radius:var(--r);margin:0 16px 10px;padding:13px 16px;cursor:pointer;text-align:center;color:var(--btn);font-size:14px;font-weight:600;width:calc(100% - 32px)}
 </style>
 </head>
 <body>
 <div id="app">
   <div class="screen" id="screen"></div>
-  <nav class="bottom-nav" id="bottomNav"></nav>
+  <nav class="nav" id="nav"></nav>
 </div>
-
 <script>
-// ─── FIREBASE INIT ─────────────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyDqgJATeMaylCJD-qNpxC2gdOi_WTozwAE",
-  authDomain: "handover-pro-276a5.firebaseapp.com",
-  databaseURL: "https://handover-pro-276a5-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "handover-pro-276a5",
-  storageBucket: "handover-pro-276a5.firebasestorage.app",
-  messagingSenderId: "491227537547",
-  appId: "1:491227537547:web:11819b7e6167adf987348e"
-};
-firebase.initializeApp(firebaseConfig);
+// ── FIREBASE ────────────────────────────────────────────────────────
+firebase.initializeApp({
+  apiKey:"AIzaSyDqgJATeMaylCJD-qNpxC2gdOi_WTozwAE",
+  authDomain:"handover-pro-276a5.firebaseapp.com",
+  databaseURL:"https://handover-pro-276a5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:"handover-pro-276a5",
+  storageBucket:"handover-pro-276a5.firebasestorage.app",
+  messagingSenderId:"491227537547",
+  appId:"1:491227537547:web:11819b7e6167adf987348e"
+});
 const db = firebase.database();
 
-// ─── TELEGRAM ──────────────────────────────────────────────────────────────
-const tg = window.Telegram.WebApp;
-tg.ready();
-tg.expand();
+// ── TELEGRAM ────────────────────────────────────────────────────────
+const tg = window.Telegram?.WebApp || {ready:()=>{},expand:()=>{},HapticFeedback:{impactOccurred:()=>{},notificationOccurred:()=>{}},initDataUnsafe:{user:{id:999,first_name:'Test'}},showAlert:(m)=>alert(m),showConfirm:(m,cb)=>cb(confirm(m))};
+tg.ready(); tg.expand();
+const hap = (t='light') => { try{tg.HapticFeedback.impactOccurred(t)}catch(e){} };
+const hapN = (t='success') => { try{tg.HapticFeedback.notificationOccurred(t)}catch(e){} };
 
-const haptic = tg.HapticFeedback;
-function hap(type = 'light') { try { haptic.impactOccurred(type); } catch(e){} }
-function hapNotify(type = 'success') { try { haptic.notificationOccurred(type); } catch(e){} }
+// ── STATE ───────────────────────────────────────────────────────────
+let TAB = 'home', USER = null, SHIFTS = [], OBJECTS = [], LANG = 'ru';
+let DRAFT = {}, TEMP_C = [], STEP = 1, FILTER = 'all';
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-let currentTab = 'home';
-let currentUser = null;
-let shifts = [];
-let historyFilter = 'all';
-let newShiftData = { object: '', block: '', floor: '', shift_type: 'day', constructions: [] };
-let currentShiftId = null;
-let prevTab = 'home';
+// ── LANGS ───────────────────────────────────────────────────────────
+const LANGS = {
+  ru:{home:'Главная',shift:'Смена',history:'История',profile:'Профиль',admin:'Админ',
+      new_shift:'Новая смена',history_lbl:'История',confirm:'Подтвердить',report:'Отчёт',
+      open_shifts:'Открытых',shifts_count:'Смен',m3_count:'м³ бетона',recent:'Последние смены',
+      object:'Объект',block:'Блок',floor:'Этаж',shift_type:'Смена',day:'☀️ День',night:'🌙 Ночь',
+      constructions:'Конструкции',type:'Тип',marks:'Маркировки',concrete_m3:'Бетон, м³',
+      supply:'Подача',rebar:'Арматура',formwork:'Опалубка',geodesy:'Геодезия',
+      ok:'✅ Принято',partial:'⚠️ Частично',not_ok:'❌ Не принято',
+      defects:'Дефекты',add_defect:'+ Добавить дефект',
+      add_construction:'+ Добавить конструкцию',next:'Далее →',back:'← Назад',
+      summary:'Сводка',submit_shift:'Потяните чтобы создать →',confirm_shift:'Потяните чтобы подтвердить →',
+      actual_m3:'Фактический бетон, м³',close_status:'Статус закрытия',
+      done:'Выполнено',partial_done:'Частично',failed:'Не выполнено',
+      notes:'Общие заметки',notes_hint:'Опишите ситуацию кратко — бот структурирует...',
+      structure_note:'Структурировать ✨',night_checklist:'Чеклист ночной смены',
+      pending_access:'Ожидает одобрения',approve:'Одобрить',reject:'Отклонить',
+      access_pending:'Ваш аккаунт ожидает одобрения администратором',
+      day_shift:'☀️ Дневная смена',night_shift:'🌙 Ночная смена'},
+  en:{home:'Home',shift:'Shift',history:'History',profile:'Profile',admin:'Admin',
+      new_shift:'New Shift',history_lbl:'History',confirm:'Confirm',report:'Report',
+      open_shifts:'Open',shifts_count:'Shifts',m3_count:'m³ concrete',recent:'Recent shifts',
+      object:'Object',block:'Block',floor:'Floor',shift_type:'Shift',day:'☀️ Day',night:'🌙 Night',
+      constructions:'Constructions',type:'Type',marks:'Marks',concrete_m3:'Concrete, m³',
+      supply:'Supply',rebar:'Rebar',formwork:'Formwork',geodesy:'Geodesy',
+      ok:'✅ Accepted',partial:'⚠️ Partial',not_ok:'❌ Not accepted',
+      defects:'Defects',add_defect:'+ Add defect',
+      add_construction:'+ Add construction',next:'Next →',back:'← Back',
+      summary:'Summary',submit_shift:'Swipe to create →',confirm_shift:'Swipe to confirm →',
+      actual_m3:'Actual concrete, m³',close_status:'Completion status',
+      done:'Completed',partial_done:'Partial',failed:'Failed',
+      notes:'General notes',notes_hint:'Describe the situation briefly — bot will structure...',
+      structure_note:'Structure ✨',night_checklist:'Night shift checklist',
+      pending_access:'Awaiting approval',approve:'Approve',reject:'Reject',
+      access_pending:'Your account is awaiting admin approval',
+      day_shift:'☀️ Day shift',night_shift:'🌙 Night shift'},
+  uz:{home:'Bosh sahifa',shift:'Smena',history:'Tarix',profile:'Profil',admin:'Admin',
+      new_shift:'Yangi smena',history_lbl:'Tarix',confirm:'Tasdiqlash',report:'Hisobot',
+      open_shifts:'Ochiq',shifts_count:'Smenalar',m3_count:'м³ beton',recent:'Oxirgi smenalar',
+      object:'Obyekt',block:'Blok',floor:'Qavat',shift_type:'Smena',day:'☀️ Kun',night:'🌙 Tun',
+      constructions:'Konstruksiyalar',type:'Tur',marks:'Belgilar',concrete_m3:'Beton, м³',
+      supply:'Yetkazish',rebar:'Armatura',formwork:'Qolip',geodesy:'Geodeziya',
+      ok:'✅ Qabul qilindi',partial:'⚠️ Qisman',not_ok:'❌ Qabul qilinmadi',
+      defects:'Kamchiliklar',add_defect:'+ Kamchilik qoʻshish',
+      add_construction:'+ Konstruksiya qoʻshish',next:'Keyingi →',back:'← Orqaga',
+      summary:'Xulosa',submit_shift:'Smena yaratish uchun torting →',confirm_shift:'Tasdiqlash uchun torting →',
+      actual_m3:'Haqiqiy beton, м³',close_status:'Yopish holati',
+      done:'Bajarildi',partial_done:'Qisman',failed:'Bajarilmadi',
+      notes:'Umumiy eslatmalar',notes_hint:'Vaziyatni qisqacha tasvirlab bering...',
+      structure_note:'Tuzilish ✨',night_checklist:'Tungi smena chek-listi',
+      pending_access:'Tasdiqlash kutilmoqda',approve:'Tasdiqlash',reject:'Rad etish',
+      access_pending:'Akkauntingiz admin tomonidan tasdiqlanishini kutmoqda',
+      day_shift:'☀️ Kunduzgi smena',night_shift:'🌙 Tungi smena'}
+};
+const t = (k) => LANGS[LANG]?.[k] || LANGS.ru[k] || k;
 
-// ─── NAV TABS ──────────────────────────────────────────────────────────────
+// ── DEFECTS ─────────────────────────────────────────────────────────
+const DEFAULT_REBAR_DEFECTS = [
+  {id:'d1', icon:'📏', text:{ru:'Шаг арматуры не соответствует проекту', en:'Rebar spacing does not match design', uz:'Armatura qadami loyihaga mos kelmaydi'}},
+  {id:'d2', icon:'⚖️', text:{ru:'Диаметр стержней не соответствует', en:'Bar diameter does not match', uz:'Sterjen diametri mos kelmaydi'}},
+  {id:'d3', icon:'🔗', text:{ru:'Недостаточный нахлёст арматуры', en:'Insufficient rebar overlap', uz:'Armatura ustma-ust qoplami yetarli emas'}},
+  {id:'d4', icon:'🔩', text:{ru:'Спейсеры не установлены', en:'Spacers not installed', uz:'Speysarlar oʻrnatilmagan'}},
+  {id:'d5', icon:'📐', text:{ru:'Отклонение от оси', en:'Axis deviation', uz:'Oʻqdan chetlanish'}},
+  {id:'d6', icon:'🦺', text:{ru:'Защитный слой не обеспечен', en:'Protective layer not provided', uz:'Himoya qatlami taʼminlanmagan'}},
+  {id:'d7', icon:'🔧', text:{ru:'Сварные соединения не проверены', en:'Welded joints not inspected', uz:'Payvand birikmalari tekshirilmagan'}},
+];
+const DEFAULT_FORMWORK_DEFECTS = [
+  {id:'f1', icon:'📦', text:{ru:'Недостаточная жёсткость опалубки', en:'Insufficient formwork rigidity', uz:'Qolip yetarlicha qattiq emas'}},
+  {id:'f2', icon:'🔒', text:{ru:'Стяжки не затянуты', en:'Ties not tightened', uz:'Taranglagichlar tortilmagan'}},
+  {id:'f3', icon:'🧹', text:{ru:'Опалубка не очищена', en:'Formwork not cleaned', uz:'Qolip tozalanmagan'}},
+  {id:'f4', icon:'💧', text:{ru:'Протечки в стыках', en:'Leaks at joints', uz:'Birikmalarda sizish'}},
+  {id:'f5', icon:'📏', text:{ru:'Геометрия не выдержана', en:'Geometry not maintained', uz:'Geometriya saqllanmagan'}},
+];
+const SUPPLY_OPTIONS = ['насос','кран','вручную','миксер','бадья'];
+const C_TYPES = ['Колонна','Стена','Плита','Балка','Фундамент','Лестница','Ригель','Перемычка'];
+
+// ── NAV ─────────────────────────────────────────────────────────────
 const TABS = [
-  { id: 'home', label: 'Главная', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>` },
-  { id: 'shift', label: 'Смена', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>` },
-  { id: 'history', label: 'История', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>` },
-  { id: 'profile', label: 'Профиль', icon: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>` },
+  {id:'home',icon:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>`},
+  {id:'shift',icon:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>`},
+  {id:'history',icon:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3c-4.97 0-9 4.03-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42C8.27 19.99 10.51 21 13 21c4.97 0 9-4.03 9-9s-4.03-9-9-9zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8z"/></svg>`},
+  {id:'profile',icon:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>`},
 ];
 
 function renderNav() {
-  const nav = document.getElementById('bottomNav');
-  nav.innerHTML = TABS.map(t => `
-    <button class="nav-tab ${currentTab === t.id ? 'active' : ''}" onclick="switchTab('${t.id}')">
-      ${t.icon}
-      <span>${t.label}</span>
-    </button>
-  `).join('');
+  const tabs = [...TABS];
+  if (USER?.role === 'admin') tabs.push({id:'admin',icon:`<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>`});
+  document.getElementById('nav').innerHTML = tabs.map(tb => `
+    <button class="nav-btn ${TAB===tb.id?'on':''}" onclick="go('${tb.id}')">
+      ${tb.icon}<span>${t(tb.id)}</span>
+    </button>`).join('');
 }
 
-function switchTab(tab) {
-  hap('light');
-  currentTab = tab;
-  renderNav();
-  render();
-}
+function go(tab) { hap(); TAB=tab; renderNav(); render(); }
 
-// ─── DATA LOADING ──────────────────────────────────────────────────────────
+// ── DATA ─────────────────────────────────────────────────────────────
 async function loadUser() {
-  const tgUser = tg.initDataUnsafe?.user;
-  if (!tgUser) {
-    // Dev fallback
-    currentUser = { id: 'dev', name: 'Dev User', role: 'engineer', shift_type: 'day', telegram_id: 0 };
-    return;
-  }
-  
+  const tgU = tg.initDataUnsafe?.user;
+  if (!tgU) { USER={id:'dev',name:'Dev User',role:'admin',shift_type:'day',lang:'ru',approved:true,telegram_id:0}; LANG='ru'; return; }
   const snap = await db.ref('users').once('value');
-  const users = snap.val() || {};
-  for (const [uid, u] of Object.entries(users)) {
-    if (u.telegram_id === tgUser.id) {
-      currentUser = { ...u, id: uid };
-      return;
-    }
+  const all = snap.val()||{};
+  for(const [uid,u] of Object.entries(all)) {
+    if(u.telegram_id===tgU.id) { USER={...u,id:uid}; LANG=u.lang||'ru'; return; }
   }
-  // Create new user
+  // New user — create pending
   const ref = db.ref('users').push({
-    telegram_id: tgUser.id,
-    name: tgUser.first_name + (tgUser.last_name ? ' ' + tgUser.last_name : ''),
-    username: tgUser.username || '',
-    role: 'engineer',
-    shift_type: 'day',
+    telegram_id:tgU.id,
+    name:tgU.first_name+(tgU.last_name?' '+tgU.last_name:''),
+    username:tgU.username||'',
+    role:'engineer',shift_type:'day',lang:'ru',approved:false
   });
-  currentUser = { telegram_id: tgUser.id, name: tgUser.first_name, role: 'engineer', shift_type: 'day', id: ref.key };
+  USER={telegram_id:tgU.id,name:tgU.first_name,role:'engineer',shift_type:'day',lang:'ru',approved:false,id:ref.key};
 }
 
 async function loadShifts() {
-  if (!currentUser) return;
   const snap = await db.ref('shifts').once('value');
-  const all = snap.val() || {};
-  const arr = Object.entries(all).map(([id, v]) => ({ ...v, id }));
-  arr.sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
-  shifts = currentUser.role === 'engineer'
-    ? arr.filter(s => s.engineer_id === currentUser.id)
-    : arr;
+  const all = snap.val()||{};
+  const arr = Object.entries(all).map(([id,v])=>({...v,id}));
+  arr.sort((a,b)=>(b.created_at||'').localeCompare(a.created_at||''));
+  SHIFTS = USER?.role==='engineer' ? arr.filter(s=>s.engineer_id===USER.id) : arr;
 }
 
-// ─── RENDER ────────────────────────────────────────────────────────────────
+async function loadObjects() {
+  const snap = await db.ref('objects').once('value');
+  OBJECTS = Object.entries(snap.val()||{}).map(([id,v])=>({...v,id}));
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────
 async function render() {
-  const screen = document.getElementById('screen');
-  screen.innerHTML = '<div class="loading"><div class="spinner"></div><span>Загрузка...</span></div>';
-  await loadShifts();
-  
-  switch(currentTab) {
+  const s = document.getElementById('screen');
+  s.innerHTML = '<div class="loading"><div class="spin"></div></div>';
+  await loadShifts(); await loadObjects();
+  if (!USER?.approved && USER?.role!=='admin') { renderPending(); return; }
+  switch(TAB) {
     case 'home': renderHome(); break;
-    case 'shift': renderNewShift(); break;
+    case 'shift': initNewShift(); break;
     case 'history': renderHistory(); break;
     case 'profile': renderProfile(); break;
+    case 'admin': renderAdmin(); break;
   }
 }
 
-// ─── HOME ──────────────────────────────────────────────────────────────────
+// ── PENDING ──────────────────────────────────────────────────────────
+function renderPending() {
+  document.getElementById('screen').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:70vh;padding:30px;text-align:center">
+      <div style="font-size:60px;margin-bottom:16px">⏳</div>
+      <div style="font-size:19px;font-weight:700;margin-bottom:8px">${t('pending_access')}</div>
+      <div style="font-size:14px;color:var(--hint);line-height:1.6">${t('access_pending')}</div>
+    </div>`;
+}
+
+// ── HOME ─────────────────────────────────────────────────────────────
 function renderHome() {
-  const screen = document.getElementById('screen');
-  const openShifts = shifts.filter(s => s.status === 'open');
-  const totalM3 = shifts.reduce((a, s) => a + (s.constructions || []).reduce((b, c) => b + (c.concrete_plan_m3 || 0), 0), 0);
-  const shiftLabel = currentUser?.shift_type === 'night' ? '🌙 Ночная смена' : '☀️ Дневная смена';
-  
-  const recentCards = shifts.slice(0, 5).map(s => shiftCard(s)).join('');
-  
-  screen.innerHTML = `
-    <div class="home-hero">
-      <div class="hero-greeting">${shiftLabel}</div>
-      <div class="hero-name">${currentUser?.name || '—'}</div>
+  const s = document.getElementById('screen');
+  const open = SHIFTS.filter(x=>x.status==='open');
+  const m3 = SHIFTS.reduce((a,x)=>a+(x.constructions||[]).reduce((b,c)=>b+(c.concrete_plan_m3||0),0),0);
+  const sl = USER?.shift_type==='night'?t('night_shift'):t('day_shift');
+  s.innerHTML = `
+    <div class="hero">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="hero-sub">${sl}</div>
+          <div class="hero-name">${USER?.name||'—'}</div>
+        </div>
+        <div class="lang-badge" onclick="showLangPicker()">🌐 ${LANG.toUpperCase()}</div>
+      </div>
       <div class="hero-stats">
-        <div class="hero-stat">
-          <div class="num">${shifts.length}</div>
-          <div class="lbl">Смен</div>
-        </div>
-        <div class="hero-stat" style="margin-left:24px">
-          <div class="num">${Math.round(totalM3)}</div>
-          <div class="lbl">м³ бетона</div>
-        </div>
-        <div class="hero-stat" style="margin-left:24px">
-          <div class="num">${openShifts.length}</div>
-          <div class="lbl">Открытых</div>
-        </div>
+        <div class="hstat"><div class="n">${SHIFTS.length}</div><div class="l">${t('shifts_count')}</div></div>
+        <div class="hstat" style="margin-left:20px"><div class="n">${Math.round(m3)}</div><div class="l">${t('m3_count')}</div></div>
+        <div class="hstat" style="margin-left:20px"><div class="n">${open.length}</div><div class="l">${t('open_shifts')}</div></div>
       </div>
     </div>
-
-    <div class="action-grid">
-      <button class="action-btn" onclick="switchTab('shift')">
-        <span class="action-icon">➕</span>
-        <span>Новая смена</span>
-      </button>
-      <button class="action-btn" onclick="switchTab('history')">
-        <span class="action-icon">📋</span>
-        <span>История</span>
-      </button>
-      <button class="action-btn" onclick="switchTab('history')">
-        <span class="action-icon">✅</span>
-        <span>Подтвердить</span>
-      </button>
-      <button class="action-btn" onclick="showReport()">
-        <span class="action-icon">📄</span>
-        <span>Отчёт</span>
-      </button>
+    <div class="grid2">
+      <button class="act" onclick="go('shift')"><span class="act-icon">➕</span>${t('new_shift')}</button>
+      <button class="act" onclick="go('history')"><span class="act-icon">📋</span>${t('history_lbl')}</button>
+      <button class="act" onclick="showConfirmQueue()"><span class="act-icon">✅</span>${t('confirm')}</button>
+      <button class="act" onclick="go('history')"><span class="act-icon">📄</span>${t('report')}</button>
     </div>
-
-    <div class="section-title">Последние смены</div>
-    ${recentCards || `<div class="empty"><div class="empty-icon">📋</div><div class="empty-title">Смен пока нет</div><div class="empty-text">Создайте первую смену</div></div>`}
+    ${USER?.shift_type==='night'&&SHIFTS.length>0?`<div class="section">${t('night_checklist')}</div>${renderNightChecklist(SHIFTS[0])}`:``}
+    <div class="section">${t('recent')}</div>
+    ${SHIFTS.slice(0,5).map(shiftCard).join('')||emptyState('📋','Нет смен')}
   `;
 }
 
 function shiftCard(s) {
-  const m3 = (s.constructions || []).reduce((a, c) => a + (c.concrete_plan_m3 || 0), 0);
-  const statusIcons = { open: '🟡', closed: '✅', partial: '⚠️', failed: '❌' };
-  const icon = statusIcons[s.status] || '⚪';
-  const shiftIcon = s.shift_type === 'night' ? '🌙' : '☀️';
-  const date = (s.created_at || '').slice(0, 10);
-  const constructCount = (s.constructions || []).length;
-  
+  const m3=(s.constructions||[]).reduce((a,c)=>a+(c.concrete_plan_m3||0),0);
+  const icons={open:'🟡',closed:'✅',partial:'⚠️',failed:'❌'};
+  const st=s.shift_type==='night'?'🌙':'☀️';
+  const date=(s.created_at||'').slice(0,10);
+  return `<div class="scard" onclick="showDetail('${s.id}')">
+    <div class="sicon ${s.status}">${st}</div>
+    <div class="sinfo">
+      <div class="sobj">${s.object_name||'—'}</div>
+      <div class="smeta">${icons[s.status]||'⚪'} ${(s.constructions||[]).length} конструкц. • ${s.engineer_name||'—'}</div>
+    </div>
+    <div class="sright"><div class="sm3">${Math.round(m3)} м³</div><div class="sdate">${date}</div></div>
+  </div>`;
+}
+
+function emptyState(icon,title) {
+  return `<div class="empty"><div class="empty-i">${icon}</div><div class="empty-t">${title}</div></div>`;
+}
+
+// ── LANG PICKER ──────────────────────────────────────────────────────
+function showLangPicker() {
+  hap();
+  showModal(`<div class="modal-title">🌐 Язык / Language / Til</div>
+    ${['ru','en','uz'].map(l=>`<button class="btn ${LANG===l?'':'sec'}" style="margin-bottom:8px" onclick="setLang('${l}');closeModal()">${{ru:'🇷🇺 Русский',en:'🇬🇧 English',uz:'🇺🇿 O\'zbek'}[l]}</button>`).join('')}`);
+}
+
+async function setLang(l) {
+  LANG=l;
+  if(USER?.id) { await db.ref(`users/${USER.id}`).update({lang:l}); USER.lang=l; }
+  renderNav(); render();
+}
+
+// ── NEW SHIFT ─────────────────────────────────────────────────────────
+function initNewShift() {
+  DRAFT={object_name:'',object_id:'',block:'',floor:'',shift_type:USER?.shift_type||'day',note:''};
+  TEMP_C=[]; STEP=1;
+  renderStep();
+}
+
+function renderStep() {
+  const s=document.getElementById('screen');
+  const dots=[1,2,3,4].map(i=>`<div class="sdot ${i<STEP?'done':i===STEP?'on':''}"></div>`).join('');
+  const titles={1:t('object'),2:t('constructions'),3:t('notes'),4:t('summary')};
+  s.innerHTML=`<div class="fhdr">${titles[STEP]||''}</div><div class="steps">${dots}</div>${stepContent()}`;
+  if(STEP===4) initSwipe('swipe-create',submitShift);
+  if(STEP===2) initSupplyAutocomplete();
+}
+
+function stepContent() {
+  if(STEP===1) return step1();
+  if(STEP===2) return step2();
+  if(STEP===3) return step3();
+  if(STEP===4) return step4();
+  return '';
+}
+
+// STEP 1 — Object
+function step1() {
+  const objOpts = OBJECTS.map(o=>`<option value="${o.id}">${o.name}</option>`).join('');
+  const blkOpts = DRAFT.object_id ? (OBJECTS.find(o=>o.id===DRAFT.object_id)?.blocks||[]).map(b=>`<option value="${b}">${b}</option>`).join('') : '';
   return `
-    <div class="shift-card" onclick="showShiftDetail('${s.id}')">
-      <div class="shift-icon ${s.status}">${shiftIcon}</div>
-      <div class="shift-info">
-        <div class="shift-obj">${s.object_name || '—'}</div>
-        <div class="shift-meta">${icon} ${constructCount} конструкц. • ${s.engineer_name || '—'}</div>
+    <div class="section">${t('object')}</div>
+    <div class="fsec">
+      <div class="frow">
+        <span class="flbl">${t('object')}</span>
+        <input class="finp" id="inp-obj" list="obj-list" placeholder="East Tower..." value="${DRAFT.object_name}" oninput="onObjInput(this.value)">
+        <datalist id="obj-list">${objOpts}</datalist>
       </div>
-      <div class="shift-right">
-        <div class="shift-m3">${Math.round(m3)} м³</div>
-        <div class="shift-date">${date}</div>
+      <div class="frow">
+        <span class="flbl">${t('block')}</span>
+        <input class="finp" id="inp-block" list="blk-list" placeholder="Ramp2, Tower A..." value="${DRAFT.block}" oninput="DRAFT.block=this.value">
+        <datalist id="blk-list">${blkOpts}</datalist>
+      </div>
+      <div class="frow">
+        <span class="flbl">${t('floor')}</span>
+        <input class="finp" id="inp-floor" placeholder="5" type="text" value="${DRAFT.floor}" oninput="DRAFT.floor=this.value">
+      </div>
+      <div class="frow">
+        <span class="flbl">${t('shift_type')}</span>
+        <div class="seg">
+          <button class="sbtn ${DRAFT.shift_type==='day'?'on':''}" onclick="setShiftType('day')">${t('day')}</button>
+          <button class="sbtn ${DRAFT.shift_type==='night'?'on':''}" onclick="setShiftType('night')">${t('night')}</button>
+        </div>
       </div>
     </div>
+    <button class="btn" onclick="nextStep1()">${t('next')}</button>
   `;
 }
 
-// ─── SHIFT DETAIL ──────────────────────────────────────────────────────────
-function showShiftDetail(shiftId) {
-  hap('light');
-  prevTab = currentTab;
-  currentShiftId = shiftId;
-  const s = shifts.find(x => x.id === shiftId);
-  if (!s) return;
-  
-  const m3 = (s.constructions || []).reduce((a, c) => a + (c.concrete_plan_m3 || 0), 0);
-  const photos = s.photos || [];
-  const warnings = s.warnings || [];
-  const statusLabel = { open: '🟡 Открыта', closed: '✅ Закрыта', partial: '⚠️ Частично', failed: '❌ Не выполнено' }[s.status] || s.status;
-  
-  const constructionItems = (s.constructions || []).map(c => {
-    const marks = (c.marks || []).join(', ');
-    const typeIcon = { Колонна: '🏛', Стена: '🧱', Плита: '⬜', Балка: '▬', Фундамент: '🏗', Лестница: '🪜', Ригель: '—', Перемычка: '—' }[c.type] || '🔲';
-    const natLabel = { given: '✅ Дана', not_given: '❌ Не дана', will_be_night: '🌙 Ночью' }[c.nature_status] || '—';
-    const rebLabel = { accepted: '✅ Сдана', partial: '⚠️ Частично', not_accepted: '❌ Не сдана' }[c.rebar_status] || '—';
-    return `
-      <div class="construction-item">
-        <div class="construction-header">
-          <div class="c-type-icon">${typeIcon}</div>
-          <div>
-            <div class="c-title">${c.type}</div>
-            <div class="c-marks">${marks} • ${c.concrete_plan_m3 || 0} м³</div>
-          </div>
-        </div>
-        <div class="c-body">
-          <div style="display:flex;gap:12px;font-size:13px;">
-            <span>Натура: ${natLabel}</span>
-            <span>Арм: ${rebLabel}</span>
-          </div>
-          ${c.concrete_method ? `<div style="font-size:12px;color:var(--tg-hint);margin-top:4px">Подача: ${c.concrete_method}</div>` : ''}
-          ${c.comment ? `<div style="font-size:13px;margin-top:6px;color:var(--tg-hint)">${c.comment}</div>` : ''}
-        </div>
-      </div>`;
-  }).join('');
-  
-  const warningsHtml = warnings.length ? warnings.map(w => `<div class="warn-badge">⚠️ ${w}</div>`).join('') : '';
-  
-  const photosHtml = photos.length ? `
-    <div class="section-title">Фото (${photos.length})</div>
-    <div class="photo-grid">
-      ${photos.map(p => `<img class="photo-thumb" src="${p.url}" loading="lazy">`).join('')}
-    </div>` : '';
-  
-  const isOpen = s.status === 'open';
-  const canClose = isOpen && (currentUser?.id === s.engineer_id || ['supervisor','admin'].includes(currentUser?.role));
-  
-  document.getElementById('screen').innerHTML = `
-    <button class="back-btn" onclick="goBack()">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-      Назад
-    </button>
-    <div class="detail-hero">
-      <h2>${s.object_name || '—'}</h2>
-      <div class="detail-meta">
-        Блок ${s.block || '—'} • Этаж ${s.floor || '—'} • ${statusLabel}<br>
-        ${s.engineer_name || '—'} • ${(s.created_at||'').slice(0,16).replace('T',' ')}
-      </div>
-    </div>
-    <div class="stats-row">
-      <div class="stat-card"><div class="num">${(s.constructions||[]).length}</div><div class="lbl">Констр.</div></div>
-      <div class="stat-card"><div class="num">${Math.round(m3)}</div><div class="lbl">м³</div></div>
-      <div class="stat-card"><div class="num">${photos.length}</div><div class="lbl">Фото</div></div>
-    </div>
-    ${warningsHtml}
-    <div class="section-title" style="margin-bottom:4px">Конструкции</div>
-    ${constructionItems}
-    ${photosHtml}
-    ${canClose ? `
-      <div class="section-title">Действия</div>
-      <div id="swipeArea"></div>
-      <button class="main-btn secondary" onclick="downloadReport('${s.id}')">📄 Скачать отчёт</button>
-    ` : `<button class="main-btn secondary" onclick="downloadReport('${s.id}')">📄 Скачать отчёт</button>`}
-    <div style="height:20px"></div>
-  `;
-  
-  if (canClose) {
-    renderSwipeButton(s.id);
-  }
+function onObjInput(val) {
+  DRAFT.object_name = val;
+  const found = OBJECTS.find(o=>o.name.toLowerCase()===val.toLowerCase());
+  if(found) { DRAFT.object_id=found.id; updateBlockList(found); }
 }
 
-function goBack() {
-  hap('light');
-  currentShiftId = null;
-  render();
+function updateBlockList(obj) {
+  const dl = document.getElementById('blk-list');
+  if(dl && obj.blocks) dl.innerHTML = obj.blocks.map(b=>`<option value="${b}">${b}</option>`).join('');
 }
 
-// ─── SWIPE BUTTON ──────────────────────────────────────────────────────────
-function renderSwipeButton(shiftId) {
-  const container = document.getElementById('swipeArea');
-  if (!container) return;
-  container.innerHTML = `
-    <div class="swipe-container" id="swipeContainer">
-      <div class="swipe-track">Потяните чтобы подтвердить →</div>
-      <div class="swipe-thumb" id="swipeThumb">→</div>
-    </div>
-  `;
-  
-  const thumb = document.getElementById('swipeThumb');
-  const cont = document.getElementById('swipeContainer');
-  let startX = 0, isDragging = false;
-  const maxX = cont.offsetWidth - thumb.offsetWidth - 8;
-  
-  function onStart(e) {
-    isDragging = true;
-    startX = (e.touches ? e.touches[0].clientX : e.clientX) - parseInt(thumb.style.left || 0);
-    hap('light');
-  }
-  
-  function onMove(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-    const x = Math.max(0, Math.min(maxX, (e.touches ? e.touches[0].clientX : e.clientX) - startX));
-    thumb.style.left = x + 'px';
-    if (x >= maxX * 0.85) {
-      thumb.style.opacity = '0.7';
-    }
-  }
-  
-  function onEnd() {
-    if (!isDragging) return;
-    isDragging = false;
-    const x = parseInt(thumb.style.left || 0);
-    if (x >= maxX * 0.85) {
-      thumb.classList.add('success');
-      thumb.innerHTML = '✓';
-      hapNotify('success');
-      setTimeout(() => closeShift(shiftId, 'closed'), 600);
-    } else {
-      thumb.style.left = '0px';
-      thumb.style.opacity = '1';
-    }
-  }
-  
-  thumb.addEventListener('mousedown', onStart);
-  thumb.addEventListener('touchstart', onStart, { passive: false });
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('touchmove', onMove, { passive: false });
-  document.addEventListener('mouseup', onEnd);
-  document.addEventListener('touchend', onEnd);
-}
-
-async function closeShift(shiftId, status) {
-  await db.ref(`shifts/${shiftId}`).update({
-    status,
-    closed_at: new Date().toISOString(),
-    closed_by: currentUser?.id,
-  });
-  hapNotify('success');
-  tg.showAlert('✅ Смена подтверждена!');
-  await render();
-}
-
-// ─── NEW SHIFT FORM ─────────────────────────────────────────────────────────
-let newShiftStep = 1;
-let tempConstructions = [];
-
-function renderNewShift() {
-  newShiftData = { object_name: '', block: '', floor: '', shift_type: 'day', constructions: [] };
-  tempConstructions = [];
-  newShiftStep = 1;
-  renderShiftStep();
-}
-
-function renderShiftStep() {
-  const screen = document.getElementById('screen');
-  const steps = ['', 'Объект', 'Конструкции', 'Сводка'];
-  const stepDots = [1,2,3].map(i => `<div class="step-dot ${i < newShiftStep ? 'done' : i === newShiftStep ? 'active' : ''}"></div>`).join('');
-  
-  let content = '';
-  
-  if (newShiftStep === 1) {
-    content = `
-      <div class="step-indicator">${stepDots}</div>
-      <div class="section-title">Информация об объекте</div>
-      <div class="form-section">
-        <div class="form-row">
-          <span class="form-label">Объект</span>
-          <input class="form-input" id="inp-object" placeholder="Название объекта" value="${newShiftData.object_name}">
-        </div>
-        <div class="form-row">
-          <span class="form-label">Блок/секция</span>
-          <input class="form-input" id="inp-block" placeholder="Б-1" value="${newShiftData.block}">
-        </div>
-        <div class="form-row">
-          <span class="form-label">Этаж</span>
-          <input class="form-input" id="inp-floor" placeholder="5" value="${newShiftData.floor}" type="number">
-        </div>
-        <div class="form-row">
-          <span class="form-label">Смена</span>
-          <div class="seg-control">
-            <button class="seg-btn ${newShiftData.shift_type==='day'?'active':''}" onclick="setShiftType('day')">☀️ Дневная</button>
-            <button class="seg-btn ${newShiftData.shift_type==='night'?'active':''}" onclick="setShiftType('night')">🌙 Ночная</button>
-          </div>
-        </div>
-      </div>
-      <button class="main-btn" onclick="nextStep1()">Далее →</button>
-    `;
-  }
-  
-  else if (newShiftStep === 2) {
-    const cItems = tempConstructions.map((c, i) => {
-      const marks = (c.marks || []).join(', ');
-      return `
-        <div class="shift-card" style="margin-bottom:8px">
-          <div style="flex:1">
-            <div class="shift-obj">${c.type} (${marks})</div>
-            <div class="shift-meta">${c.concrete_plan_m3||0} м³ • ${c.concrete_method||'—'}</div>
-          </div>
-          <button onclick="removeConstruction(${i})" style="background:none;border:none;color:var(--danger);font-size:20px;cursor:pointer">✕</button>
-        </div>
-      `;
-    }).join('');
-    
-    content = `
-      <div class="step-indicator">${stepDots}</div>
-      <div class="section-title">Конструкции (${tempConstructions.length})</div>
-      ${cItems}
-      <div id="addConstructionForm">
-        <div class="form-section">
-          <div class="form-row">
-            <span class="form-label">Тип</span>
-            <select class="form-input" id="c-type" style="color:var(--tg-text)">
-              ${['Колонна','Стена','Плита','Балка','Фундамент','Лестница','Ригель','Перемычка'].map(t=>`<option>${t}</option>`).join('')}
-            </select>
-          </div>
-          <div class="form-row">
-            <span class="form-label">Маркировки</span>
-            <input class="form-input" id="c-marks" placeholder="К-1, К-2, К-3">
-          </div>
-          <div class="form-row">
-            <span class="form-label">Бетон, м³</span>
-            <input class="form-input" id="c-m3" placeholder="45" type="number">
-          </div>
-          <div class="form-row">
-            <span class="form-label">Подача</span>
-            <select class="form-input" id="c-method" style="color:var(--tg-text)">
-              <option value="">—</option>
-              <option>насос</option><option>кран</option><option>вручную</option>
-            </select>
-          </div>
-          <div class="form-row">
-            <span class="form-label">Натура</span>
-            <div class="seg-control">
-              <button class="seg-btn active" id="nat-given" onclick="selNat('given')">✅ Дана</button>
-              <button class="seg-btn" id="nat-not_given" onclick="selNat('not_given')">❌ Нет</button>
-              <button class="seg-btn" id="nat-will_be_night" onclick="selNat('will_be_night')">🌙</button>
-            </div>
-          </div>
-          <div class="form-row">
-            <span class="form-label">Арматура</span>
-            <div class="seg-control">
-              <button class="seg-btn active" id="reb-accepted" onclick="selReb('accepted')">✅ Сдана</button>
-              <button class="seg-btn" id="reb-partial" onclick="selReb('partial')">⚠️</button>
-              <button class="seg-btn" id="reb-not_accepted" onclick="selReb('not_accepted')">❌ Нет</button>
-            </div>
-          </div>
-        </div>
-        <button class="main-btn secondary" onclick="addConstruction()">+ Добавить конструкцию</button>
-      </div>
-      <button class="main-btn" onclick="nextStep2()" ${tempConstructions.length===0?'disabled style="opacity:0.5"':''}>Далее →</button>
-      <button class="main-btn secondary" onclick="prevStep()">← Назад</button>
-    `;
-  }
-  
-  else if (newShiftStep === 3) {
-    const m3 = tempConstructions.reduce((a,c) => a + (parseFloat(c.concrete_plan_m3)||0), 0);
-    const warnings = checkWarnings(tempConstructions);
-    const warnHtml = warnings.map(w => `<div class="warn-badge">⚠️ ${w}</div>`).join('');
-    const constSummary = tempConstructions.map(c => {
-      const marks = (c.marks||[]).join(', ');
-      return `<div class="list-item">
-        <span class="list-item-icon">🏛</span>
-        <span class="list-item-label">${c.type} (${marks})</span>
-        <span class="list-item-value">${c.concrete_plan_m3||0} м³</span>
-      </div>`;
-    }).join('');
-    
-    content = `
-      <div class="step-indicator">${stepDots}</div>
-      <div class="section-title">Сводка смены</div>
-      <div class="form-section">
-        <div class="list-item"><span class="list-item-icon">🏗</span><span class="list-item-label">Объект</span><span class="list-item-value">${newShiftData.object_name||'—'}</span></div>
-        <div class="list-item"><span class="list-item-icon">🏢</span><span class="list-item-label">Блок / Этаж</span><span class="list-item-value">${newShiftData.block||'—'} / ${newShiftData.floor||'—'}</span></div>
-        <div class="list-item"><span class="list-item-icon">⏱</span><span class="list-item-label">Смена</span><span class="list-item-value">${newShiftData.shift_type==='day'?'☀️ Дневная':'🌙 Ночная'}</span></div>
-        <div class="list-item"><span class="list-item-icon">🔲</span><span class="list-item-label">Конструкций</span><span class="list-item-value">${tempConstructions.length}</span></div>
-        <div class="list-item"><span class="list-item-icon">📊</span><span class="list-item-label">Итого бетон</span><span class="list-item-value">${Math.round(m3)} м³</span></div>
-        ${constSummary}
-      </div>
-      ${warnHtml}
-      <div id="swipeCreateArea"></div>
-      <button class="main-btn secondary" onclick="prevStep()">← Изменить</button>
-      <div style="height:20px"></div>
-    `;
-  }
-  
-  screen.innerHTML = `
-    <div class="form-header">${newShiftStep===1?'➕ Новая смена':newShiftStep===2?'🏗 Конструкции':'📋 Подтверждение'}</div>
-    ${content}
-  `;
-  
-  if (newShiftStep === 3) {
-    renderCreateSwipe();
-  }
-  
-  // Init selected states
-  window._natSelected = 'given';
-  window._rebSelected = 'accepted';
-}
-
-function setShiftType(type) {
-  newShiftData.shift_type = type;
-  document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
-  renderShiftStep();
-}
-
-function selNat(val) {
-  window._natSelected = val;
-  ['given','not_given','will_be_night'].forEach(v => {
-    const el = document.getElementById('nat-'+v);
-    if(el) el.classList.toggle('active', v===val);
-  });
-}
-
-function selReb(val) {
-  window._rebSelected = val;
-  ['accepted','partial','not_accepted'].forEach(v => {
-    const el = document.getElementById('reb-'+v);
-    if(el) el.classList.toggle('active', v===val);
-  });
+function setShiftType(t) {
+  DRAFT.shift_type=t;
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('on'));
+  event.target.classList.add('on');
 }
 
 function nextStep1() {
-  const obj = document.getElementById('inp-object')?.value?.trim();
-  if (!obj) { tg.showAlert('Введите название объекта'); return; }
-  newShiftData.object_name = obj;
-  newShiftData.block = document.getElementById('inp-block')?.value?.trim() || '';
-  newShiftData.floor = document.getElementById('inp-floor')?.value?.trim() || '';
-  hap('medium');
-  newShiftStep = 2;
-  renderShiftStep();
+  DRAFT.object_name = document.getElementById('inp-obj')?.value?.trim();
+  DRAFT.block = document.getElementById('inp-block')?.value?.trim();
+  DRAFT.floor = document.getElementById('inp-floor')?.value?.trim();
+  if(!DRAFT.object_name) { tg.showAlert(t('object')+' — обязательное поле'); return; }
+  // Save object to DB if new
+  saveObjectIfNew();
+  hap('medium'); STEP=2; renderStep();
 }
 
-function nextStep2() {
-  if (tempConstructions.length === 0) { tg.showAlert('Добавьте хотя бы одну конструкцию'); return; }
-  hap('medium');
-  newShiftStep = 3;
-  renderShiftStep();
+async function saveObjectIfNew() {
+  if(!DRAFT.object_name) return;
+  const exists = OBJECTS.find(o=>o.name.toLowerCase()===DRAFT.object_name.toLowerCase());
+  if(!exists) {
+    const ref = await db.ref('objects').push({name:DRAFT.object_name,blocks:[],created_at:new Date().toISOString()});
+    DRAFT.object_id = ref.key;
+    OBJECTS.push({name:DRAFT.object_name,blocks:[],id:ref.key});
+  }
+  // Save block
+  if(DRAFT.block && DRAFT.object_id) {
+    const obj = OBJECTS.find(o=>o.id===DRAFT.object_id);
+    if(obj && !obj.blocks?.includes(DRAFT.block)) {
+      obj.blocks = [...(obj.blocks||[]), DRAFT.block];
+      await db.ref(`objects/${DRAFT.object_id}/blocks`).set(obj.blocks);
+    }
+  }
 }
 
-function prevStep() {
-  hap('light');
-  newShiftStep = Math.max(1, newShiftStep - 1);
-  renderShiftStep();
+// STEP 2 — Constructions
+function step2() {
+  const cItems = TEMP_C.map((c,i)=>constructionMiniCard(c,i)).join('');
+  return `
+    <div class="section">${t('constructions')} (${TEMP_C.length})</div>
+    ${cItems}
+    <div id="c-form">
+      <div class="fsec">
+        <div class="frow">
+          <span class="flbl">${t('type')}</span>
+          <select class="finp" id="c-type" style="color:var(--text)">${C_TYPES.map(x=>`<option>${x}</option>`).join('')}</select>
+        </div>
+        <div class="frow">
+          <span class="flbl">${t('marks')}</span>
+          <input class="finp" id="c-marks" placeholder="К-1, К-2, К-3">
+        </div>
+        <div class="frow">
+          <span class="flbl">${t('concrete_m3')}</span>
+          <input class="finp" id="c-m3" placeholder="45" type="number">
+        </div>
+        <div class="frow">
+          <span class="flbl">${t('supply')}</span>
+          <input class="finp" id="c-supply" list="supply-list" placeholder="насос...">
+          <datalist id="supply-list"></datalist>
+        </div>
+      </div>
+      <div class="section">${t('rebar')}</div>
+      <div class="chips" id="rebar-chips">
+        ${statusChips('rebar','accepted')}
+      </div>
+      <div id="rebar-defects" style="display:none">
+        <div class="section">${t('defects')}</div>
+        ${DEFAULT_REBAR_DEFECTS.map(d=>`<div class="defect-chip" id="rd-${d.id}" onclick="toggleDefect('rebar','${d.id}',this)"><span class="dicon">${d.icon}</span>${d.text[LANG]||d.text.ru}</div>`).join('')}
+        <div class="defect-list" id="custom-rebar-defects"></div>
+        <button onclick="addCustomDefect('rebar')" class="cl-add-btn">${t('add_defect')}</button>
+      </div>
+      <div class="section">${t('formwork')}</div>
+      <div class="chips" id="formwork-chips">
+        ${statusChips('formwork','accepted')}
+      </div>
+      <div id="formwork-defects" style="display:none">
+        <div class="section">${t('defects')}</div>
+        ${DEFAULT_FORMWORK_DEFECTS.map(d=>`<div class="defect-chip" id="fd-${d.id}" onclick="toggleDefect('formwork','${d.id}',this)"><span class="dicon">${d.icon}</span>${d.text[LANG]||d.text.ru}</div>`).join('')}
+        <div class="defect-list" id="custom-formwork-defects"></div>
+        <button onclick="addCustomDefect('formwork')" class="cl-add-btn">${t('add_defect')}</button>
+      </div>
+      <div class="section">${t('geodesy')}</div>
+      <div class="chips" id="geodesy-chips">
+        ${statusChips('geodesy','accepted')}
+      </div>
+    </div>
+    <button class="btn sec" onclick="addConstruction()">${t('add_construction')}</button>
+    <button class="btn" onclick="nextStep2()" ${TEMP_C.length===0?'disabled':''}>${t('next')}</button>
+    <button class="btn sec" onclick="prevStep()">${t('back')}</button>
+  `;
+}
+
+function statusChips(field, selected) {
+  const opts = [{v:'accepted',cls:'on-ok',lbl:t('ok')},{v:'partial',cls:'on-warn',lbl:t('partial')},{v:'not_accepted',cls:'on-bad',lbl:t('not_ok')}];
+  return opts.map(o=>`<div class="chip ${o.v===selected?o.cls:''}" onclick="selectStatus('${field}','${o.v}',this,'${o.cls}')">${o.lbl}</div>`).join('');
+}
+
+window._sel = {rebar:'accepted',formwork:'accepted',geodesy:'accepted'};
+window._defects = {rebar:[],formwork:[]};
+
+function selectStatus(field, val, el, cls) {
+  hap();
+  window._sel[field] = val;
+  const container = document.getElementById(`${field}-chips`);
+  container.querySelectorAll('.chip').forEach(c=>{c.className='chip'});
+  el.classList.add(cls);
+  const defDiv = document.getElementById(`${field}-defects`);
+  if(defDiv) defDiv.style.display = (val==='partial'||val==='not_accepted')?'block':'none';
+}
+
+function toggleDefect(field, id, el) {
+  hap();
+  const arr = window._defects[field];
+  const idx = arr.indexOf(id);
+  if(idx>=0) { arr.splice(idx,1); el.classList.remove('sel'); }
+  else { arr.push(id); el.classList.add('sel'); }
+}
+
+function addCustomDefect(field) {
+  showModal(`<div class="modal-title">${t('add_defect')}</div>
+    <input class="modal-input" id="custom-d-inp" placeholder="Описание дефекта...">
+    <button class="btn" onclick="saveCustomDefect('${field}')">${t('next')}</button>`);
+}
+
+function saveCustomDefect(field) {
+  const val = document.getElementById('custom-d-inp')?.value?.trim();
+  if(!val) return;
+  const container = document.getElementById(`custom-${field}-defects`);
+  const id = 'custom_'+Date.now();
+  window._defects[field].push(id);
+  window[`_custom_${field}_${id}`] = val;
+  container.innerHTML += `<div class="defect-chip sel"><span class="dicon">📝</span>${val}</div>`;
+  closeModal();
 }
 
 function addConstruction() {
   const type = document.getElementById('c-type')?.value;
-  const marksRaw = document.getElementById('c-marks')?.value || '';
-  const m3 = parseFloat(document.getElementById('c-m3')?.value) || 0;
-  const method = document.getElementById('c-method')?.value || '';
-  
-  const marks = marksRaw.split(/[,\s]+/).map(m => m.trim()).filter(Boolean);
-  if (marks.length === 0) marks.push(type[0] + '-1');
-  
-  tempConstructions.push({
-    type,
-    marks,
-    concrete_plan_m3: m3,
-    concrete_method: method,
-    nature_status: window._natSelected || 'given',
-    rebar_status: window._rebSelected || 'accepted',
+  const marksRaw = document.getElementById('c-marks')?.value||'';
+  const m3 = parseFloat(document.getElementById('c-m3')?.value)||0;
+  const supply = document.getElementById('c-supply')?.value||'';
+  const marks = marksRaw.split(/[,\s]+/).map(m=>m.trim()).filter(Boolean);
+  if(!marks.length) marks.push(type[0]+'-1');
+
+  // Save supply option
+  saveSupplyOption(supply);
+
+  TEMP_C.push({
+    type, marks, concrete_plan_m3:m3, concrete_method:supply,
+    rebar_status:window._sel.rebar, rebar_defects:[...window._defects.rebar],
+    formwork_status:window._sel.formwork, formwork_defects:[...window._defects.formwork],
+    geodesy_status:window._sel.geodesy,
   });
-  hap('medium');
-  renderShiftStep();
+  window._sel={rebar:'accepted',formwork:'accepted',geodesy:'accepted'};
+  window._defects={rebar:[],formwork:[]};
+  hap('medium'); STEP=2; renderStep();
 }
 
-function removeConstruction(i) {
-  hap('light');
-  tempConstructions.splice(i, 1);
-  renderShiftStep();
+async function saveSupplyOption(val) {
+  if(!val) return;
+  const snap = await db.ref('supply_options').once('value');
+  const existing = snap.val()||[];
+  if(!existing.includes(val)) await db.ref('supply_options').set([...existing,val]);
 }
 
-function checkWarnings(constructions) {
-  const w = [];
-  for (const c of constructions) {
-    const marks = (c.marks||[]).join(', ');
-    if (c.concrete_plan_m3 && c.nature_status === 'not_given')
-      w.push(`${c.type} (${marks}): натура не дана, заливка запланирована`);
-    if (c.concrete_plan_m3 && c.rebar_status === 'not_accepted')
-      w.push(`${c.type} (${marks}): арматура не сдана, заливка запланирована`);
-  }
+async function initSupplyAutocomplete() {
+  const snap = await db.ref('supply_options').once('value');
+  const opts = [...new Set([...SUPPLY_OPTIONS,...(snap.val()||[])])];
+  const dl = document.getElementById('supply-list');
+  if(dl) dl.innerHTML = opts.map(o=>`<option value="${o}">`).join('');
+}
+
+function constructionMiniCard(c,i) {
+  const marks=(c.marks||[]).join(', ');
+  const statusIcon={accepted:'✅',partial:'⚠️',not_accepted:'❌'};
+  return `<div class="scard" style="margin-bottom:8px">
+    <div style="flex:1"><div class="sobj">${c.type} (${marks})</div>
+    <div class="smeta">${statusIcon[c.rebar_status]}арм • ${statusIcon[c.formwork_status]}оп • ${statusIcon[c.geodesy_status]}гео • ${c.concrete_plan_m3||0}м³</div></div>
+    <button onclick="removeC(${i})" style="background:none;border:none;color:var(--danger);font-size:20px;cursor:pointer;padding:4px">✕</button>
+  </div>`;
+}
+
+function removeC(i) { hap(); TEMP_C.splice(i,1); renderStep(); }
+
+function nextStep2() {
+  if(!TEMP_C.length) { tg.showAlert(t('add_construction')); return; }
+  hap('medium'); STEP=3; renderStep();
+}
+
+// STEP 3 — Notes
+function step3() {
+  return `
+    <div class="section">${t('notes')}</div>
+    <div class="note-box">
+      <textarea class="note-ta" id="note-ta" placeholder="${t('notes_hint')}">${DRAFT.note||''}</textarea>
+    </div>
+    <button class="btn" onclick="structureNote()">${t('structure_note')}</button>
+    <div id="note-preview" style="display:none">
+      <div class="section">Предпросмотр</div>
+      <div class="note-box"><div class="note-preview" id="note-preview-text"></div></div>
+    </div>
+    <button class="btn" onclick="nextStep3()">${t('next')}</button>
+    <button class="btn sec" onclick="prevStep()">${t('back')}</button>
+  `;
+}
+
+async function structureNote() {
+  const raw = document.getElementById('note-ta')?.value?.trim();
+  if(!raw) return;
+  DRAFT.note = raw;
+  const btn = document.querySelector('button[onclick="structureNote()"]');
+  btn.textContent = '⏳ Обрабатываю...';
+  btn.disabled = true;
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:800,
+        messages:[{role:'user',content:`Структурируй краткую заметку инженера-строителя о смене. 
+Язык ответа: ${LANG==='ru'?'русский':LANG==='en'?'English':'o\'zbek'}.
+Заметка: "${raw}"
+Верни структурированный текст с разделами: Ситуация, Выполнено, Проблемы (если есть), Передать следующей смене.
+Коротко и по делу.`}]
+      })
+    });
+    const data = await resp.json();
+    const structured = data.content?.[0]?.text||raw;
+    DRAFT.note_structured = structured;
+    document.getElementById('note-preview').style.display='block';
+    document.getElementById('note-preview-text').textContent=structured;
+  } catch(e) { DRAFT.note_structured=raw; }
+  btn.textContent=t('structure_note'); btn.disabled=false;
+}
+
+function nextStep3() {
+  DRAFT.note = document.getElementById('note-ta')?.value?.trim()||'';
+  hap('medium'); STEP=4; renderStep();
+}
+
+// STEP 4 — Summary
+function step4() {
+  const m3=TEMP_C.reduce((a,c)=>a+(parseFloat(c.concrete_plan_m3)||0),0);
+  const warns=checkWarnings(TEMP_C);
+  const warnHtml=warns.map(w=>`<div class="wbadge">⚠️ ${w}</div>`).join('');
+  const cSummary=TEMP_C.map(c=>`<div class="litem">
+    <span class="licon">🏛</span>
+    <span class="llbl">${c.type} (${(c.marks||[]).join(', ')})</span>
+    <span class="lval">${c.concrete_plan_m3||0}м³</span>
+  </div>`).join('');
+  return `
+    <div class="section">${t('summary')}</div>
+    <div class="fsec">
+      <div class="litem"><span class="licon">🏗</span><span class="llbl">${t('object')}</span><span class="lval">${DRAFT.object_name||'—'}</span></div>
+      <div class="litem"><span class="licon">🏢</span><span class="llbl">${t('block')}</span><span class="lval">${DRAFT.block||'—'} / ${DRAFT.floor||'—'}</span></div>
+      <div class="litem"><span class="licon">⏱</span><span class="llbl">${t('shift_type')}</span><span class="lval">${DRAFT.shift_type==='day'?t('day'):t('night')}</span></div>
+      <div class="litem"><span class="licon">🔲</span><span class="llbl">${t('constructions')}</span><span class="lval">${TEMP_C.length}</span></div>
+      <div class="litem"><span class="licon">📊</span><span class="llbl">Итого бетон</span><span class="lval">${Math.round(m3)}м³</span></div>
+      ${cSummary}
+    </div>
+    ${warnHtml}
+    ${DRAFT.note_structured||DRAFT.note?`<div class="section">${t('notes')}</div><div class="note-box"><div class="note-preview">${DRAFT.note_structured||DRAFT.note}</div></div>`:''}
+    <div class="swipe-wrap" id="swipe-create">
+      <div class="swipe-lbl">${t('submit_shift')}</div>
+      <div class="swipe-thumb">→</div>
+    </div>
+    <button class="btn sec" onclick="prevStep()">${t('back')}</button>
+    <div style="height:20px"></div>
+  `;
+}
+
+function prevStep() { hap(); STEP=Math.max(1,STEP-1); renderStep(); }
+
+function checkWarnings(cs) {
+  const w=[];
+  cs.forEach(c=>{
+    const m=(c.marks||[]).join(', ');
+    if(c.concrete_plan_m3&&c.rebar_status==='not_accepted') w.push(`${c.type} (${m}): арматура не принята`);
+    if(c.concrete_plan_m3&&c.formwork_status==='not_accepted') w.push(`${c.type} (${m}): опалубка не принята`);
+    if(c.concrete_plan_m3&&c.geodesy_status!=='accepted') w.push(`${c.type} (${m}): геодезия не принята`);
+  });
   return w;
 }
 
-function renderCreateSwipe() {
-  const area = document.getElementById('swipeCreateArea');
-  if (!area) return;
-  area.innerHTML = `
-    <div class="swipe-container" id="swipeCreateContainer">
-      <div class="swipe-track">Потяните чтобы создать смену →</div>
-      <div class="swipe-thumb" id="swipeCreateThumb">→</div>
-    </div>
-  `;
-  
-  const thumb = document.getElementById('swipeCreateThumb');
-  const cont = document.getElementById('swipeCreateContainer');
-  let startX = 0, isDragging = false;
-  
-  function onStart(e) {
-    isDragging = true;
-    startX = (e.touches ? e.touches[0].clientX : e.clientX) - parseInt(thumb.style.left || 0);
-    hap('light');
-  }
-  
-  function onMove(e) {
-    if (!isDragging) return;
-    e.preventDefault();
-    const maxX = cont.offsetWidth - thumb.offsetWidth - 8;
-    const x = Math.max(0, Math.min(maxX, (e.touches ? e.touches[0].clientX : e.clientX) - startX));
-    thumb.style.left = x + 'px';
-  }
-  
-  function onEnd() {
-    if (!isDragging) return;
-    isDragging = false;
-    const maxX = cont.offsetWidth - thumb.offsetWidth - 8;
-    const x = parseInt(thumb.style.left || 0);
-    if (x >= maxX * 0.85) {
-      thumb.classList.add('success');
-      thumb.innerHTML = '✓';
-      hapNotify('success');
-      setTimeout(submitShift, 600);
-    } else {
-      thumb.style.left = '0px';
-    }
-  }
-  
-  thumb.addEventListener('mousedown', onStart);
-  thumb.addEventListener('touchstart', onStart, { passive: false });
-  document.addEventListener('mousemove', onMove);
-  document.addEventListener('touchmove', onMove, { passive: false });
-  document.addEventListener('mouseup', onEnd);
-  document.addEventListener('touchend', onEnd);
+// SWIPE BTN
+function initSwipe(containerId, onDone) {
+  const cont = document.getElementById(containerId);
+  if(!cont) return;
+  const thumb = cont.querySelector('.swipe-thumb');
+  let startX=0, isDrag=false;
+  const maxX = ()=>cont.offsetWidth-thumb.offsetWidth-8;
+  const getX = e => e.touches?e.touches[0].clientX:e.clientX;
+  const onStart = e=>{isDrag=true;startX=getX(e)-parseInt(thumb.style.left||0);hap()};
+  const onMove = e=>{if(!isDrag)return;e.preventDefault();const x=Math.max(0,Math.min(maxX(),getX(e)-startX));thumb.style.left=x+'px'};
+  const onEnd = ()=>{
+    if(!isDrag)return;isDrag=false;
+    if(parseInt(thumb.style.left||0)>=maxX()*.85){
+      thumb.classList.add('done');thumb.innerHTML='✓';hapN();
+      setTimeout(onDone,600);
+    } else {thumb.style.left='0px';}
+  };
+  thumb.addEventListener('mousedown',onStart);
+  thumb.addEventListener('touchstart',onStart,{passive:false});
+  document.addEventListener('mousemove',onMove);
+  document.addEventListener('touchmove',onMove,{passive:false});
+  document.addEventListener('mouseup',onEnd);
+  document.addEventListener('touchend',onEnd);
 }
 
 async function submitShift() {
-  const shiftData = {
-    ...newShiftData,
-    constructions: tempConstructions,
-    engineer_id: currentUser?.id,
-    engineer_name: currentUser?.name,
-    status: 'open',
-    created_at: new Date().toISOString(),
-    photos: [],
-    warnings: checkWarnings(tempConstructions),
+  const data = {
+    ...DRAFT,
+    constructions:TEMP_C,
+    engineer_id:USER?.id,
+    engineer_name:USER?.name,
+    status:'open',
+    created_at:new Date().toISOString(),
+    photos:[],
+    warnings:checkWarnings(TEMP_C),
+    lang:LANG,
   };
-  
   try {
-    await db.ref('shifts').push(shiftData);
-    hapNotify('success');
+    await db.ref('shifts').push(data);
+    hapN('success');
     tg.showAlert('✅ Смена создана!');
-    currentTab = 'home';
-    renderNav();
-    await render();
-  } catch(e) {
-    tg.showAlert('❌ Ошибка создания смены: ' + e.message);
+    TAB='home'; renderNav(); render();
+  } catch(e) { tg.showAlert('Ошибка: '+e.message); }
+}
+
+// ── DETAIL ───────────────────────────────────────────────────────────
+function showDetail(shiftId) {
+  hap();
+  const s = SHIFTS.find(x=>x.id===shiftId);
+  if(!s) return;
+  const m3=(s.constructions||[]).reduce((a,c)=>a+(c.concrete_plan_m3||0),0);
+  const photos=s.photos||[];
+  const warns=s.warnings||[];
+  const stLabel={open:'🟡 Открыта',closed:'✅ Закрыта',partial:'⚠️ Частично',failed:'❌ Не выполнено'}[s.status]||s.status;
+  const canClose=s.status==='open'&&(USER?.id===s.engineer_id||['supervisor','admin'].includes(USER?.role));
+
+  const cItems=(s.constructions||[]).map(c=>{
+    const marks=(c.marks||[]).join(', ');
+    const si={Колонна:'🏛',Стена:'🧱',Плита:'⬜',Балка:'▬',Фундамент:'🏗',Лестница:'🪜'}[c.type]||'🔲';
+    const rs={accepted:'✅',partial:'⚠️',not_accepted:'❌'};
+    return `<div class="ci">
+      <div class="ci-hdr"><div class="ci-icon">${si}</div><div><div class="ci-title">${c.type}</div><div class="ci-marks">${marks} • ${c.concrete_plan_m3||0}м³</div></div></div>
+      <div class="ci-body">
+        <div class="ci-row"><span>${t('rebar')}</span><span>${rs[c.rebar_status]||'—'}</span></div>
+        <div class="ci-row"><span>${t('formwork')}</span><span>${rs[c.formwork_status]||'—'}</span></div>
+        <div class="ci-row"><span>${t('geodesy')}</span><span>${rs[c.geodesy_status]||'—'}</span></div>
+        ${c.concrete_method?`<div class="ci-row"><span>${t('supply')}</span><span>${c.concrete_method}</span></div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  const photosHtml=photos.length?`<div class="section">Фото (${photos.length})</div><div class="pgrid">${photos.map(p=>`<img class="pthumb" src="${p.url}" loading="lazy">`).join('')}</div>`:'';
+  const noteHtml=(s.note_structured||s.note)?`<div class="section">${t('notes')}</div><div class="note-box"><div class="note-preview">${s.note_structured||s.note}</div></div>`:'';
+
+  document.getElementById('screen').innerHTML = `
+    <button class="back" onclick="render()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg> ${t('back')}
+    </button>
+    <div class="dhero">
+      <h2>${s.object_name||'—'}</h2>
+      <div class="dmeta">Блок ${s.block||'—'} • Этаж ${s.floor||'—'} • ${stLabel}<br>${s.engineer_name||'—'} • ${(s.created_at||'').slice(0,16).replace('T',' ')}</div>
+    </div>
+    <div class="stats3">
+      <div class="sc"><div class="n">${(s.constructions||[]).length}</div><div class="l">Констр.</div></div>
+      <div class="sc"><div class="n">${Math.round(m3)}</div><div class="l">м³ план</div></div>
+      <div class="sc"><div class="n">${s.actual_m3||'—'}</div><div class="l">м³ факт</div></div>
+    </div>
+    ${warns.map(w=>`<div class="wbadge">⚠️ ${w}</div>`).join('')}
+    <div class="section">${t('constructions')}</div>
+    ${cItems}
+    ${photosHtml}
+    ${noteHtml}
+    ${canClose?`
+      <div class="section">${t('close_status')}</div>
+      <div class="fsec">
+        <div class="frow">
+          <span class="flbl">${t('actual_m3')}</span>
+          <input class="finp" id="actual-m3-inp" placeholder="${Math.round(m3)}" type="number">
+        </div>
+      </div>
+      <div class="chips" style="padding:0 16px 12px">
+        <div class="chip" onclick="selectCloseStatus('closed',this)" id="cs-closed">${t('done')}</div>
+        <div class="chip" onclick="selectCloseStatus('partial',this)" id="cs-partial">${t('partial_done')}</div>
+        <div class="chip" onclick="selectCloseStatus('failed',this)" id="cs-failed">${t('failed')}</div>
+      </div>
+      <div class="swipe-wrap" id="swipe-close">
+        <div class="swipe-lbl">${t('confirm_shift')}</div>
+        <div class="swipe-thumb">→</div>
+      </div>`:``}
+    <button class="btn sec" onclick="downloadReport('${s.id}')">📄 ${t('report')}</button>
+    <div style="height:20px"></div>
+  `;
+
+  if(canClose) {
+    window._closeStatus='closed';
+    initSwipe('swipe-close', ()=>closeShift(s.id));
   }
 }
 
-// ─── HISTORY ───────────────────────────────────────────────────────────────
+window._closeStatus = 'closed';
+function selectCloseStatus(v, el) {
+  hap();
+  window._closeStatus=v;
+  ['closed','partial','failed'].forEach(s=>{
+    const el2=document.getElementById('cs-'+s);
+    if(el2){el2.className='chip';}
+  });
+  const cls={closed:'on-ok',partial:'on-warn',failed:'on-bad'}[v];
+  el.classList.add(cls);
+}
+
+async function closeShift(shiftId) {
+  const actual = parseFloat(document.getElementById('actual-m3-inp')?.value)||null;
+  await db.ref(`shifts/${shiftId}`).update({
+    status:window._closeStatus,
+    actual_m3:actual,
+    closed_at:new Date().toISOString(),
+    closed_by:USER?.id,
+  });
+  hapN('success');
+  tg.showAlert('✅ Смена закрыта!');
+  render();
+}
+
+// ── CONFIRM QUEUE ────────────────────────────────────────────────────
+function showConfirmQueue() {
+  hap();
+  const open = SHIFTS.filter(s=>s.status==='open');
+  if(!open.length) { tg.showAlert('Нет открытых смен для подтверждения'); return; }
+  showModal(`
+    <div class="modal-title">✅ Подтвердить смену</div>
+    ${open.map(s=>`
+      <div class="scard" style="margin:0 0 10px" onclick="closeModal();showDetail('${s.id}')">
+        <div class="sicon open">${s.shift_type==='night'?'🌙':'☀️'}</div>
+        <div class="sinfo">
+          <div class="sobj">${s.object_name||'—'}</div>
+          <div class="smeta">${s.engineer_name||'—'} • ${(s.created_at||'').slice(0,10)}</div>
+        </div>
+        <div class="sright"><div class="sm3">${(s.constructions||[]).reduce((a,c)=>a+(c.concrete_plan_m3||0),0)}м³</div></div>
+      </div>`).join('')}
+  `);
+}
+
+// ── NIGHT CHECKLIST ──────────────────────────────────────────────────
+function renderNightChecklist(shift) {
+  if(!shift) return '';
+  const cs = shift.constructions||[];
+  const items = cs.map((c,i)=>{
+    const marks=(c.marks||[]).join(', ');
+    return `<div class="cl-item">
+      <div class="cl-cb" id="clcb-${i}" onclick="toggleCheck(${i})"></div>
+      <div class="cl-info">
+        <div class="cl-title">${c.type} (${marks})</div>
+        <div class="cl-sub">${c.concrete_plan_m3||0}м³ • ${c.concrete_method||'—'}</div>
+      </div>
+    </div>`;
+  }).join('');
+  return `${items}<button class="cl-add-btn" onclick="addNightTask()">+ Добавить задачу</button>`;
+}
+
+function toggleCheck(i) {
+  hap();
+  const el = document.getElementById('clcb-'+i);
+  if(el) {
+    const checked = el.classList.toggle('checked');
+    el.innerHTML = checked ? '✓' : '';
+  }
+}
+
+function addNightTask() {
+  showModal(`<div class="modal-title">+ Задача</div>
+    <input class="modal-input" id="task-inp" placeholder="Описание задачи...">
+    <button class="btn" onclick="saveNightTask()">Добавить</button>`);
+}
+
+function saveNightTask() {
+  const val = document.getElementById('task-inp')?.value?.trim();
+  if(!val) return;
+  closeModal();
+  // Re-render would add it; for simplicity append to DOM
+  const btn = document.querySelector('.cl-add-btn');
+  if(btn) {
+    const div = document.createElement('div');
+    div.className='cl-item';
+    div.innerHTML=`<div class="cl-cb" onclick="this.classList.toggle('checked');this.innerHTML=this.classList.contains('checked')?'✓':''"></div><div class="cl-info"><div class="cl-title">${val}</div></div>`;
+    btn.before(div);
+  }
+  hap();
+}
+
+// ── HISTORY ──────────────────────────────────────────────────────────
 function renderHistory() {
-  const screen = document.getElementById('screen');
-  
-  let filtered = shifts;
-  if (historyFilter === 'open') filtered = shifts.filter(s => s.status === 'open');
-  else if (historyFilter === 'closed') filtered = shifts.filter(s => s.status === 'closed');
-  else if (historyFilter === 'day') filtered = shifts.filter(s => s.shift_type === 'day');
-  else if (historyFilter === 'night') filtered = shifts.filter(s => s.shift_type === 'night');
-  
-  const chips = [
-    { id: 'all', label: 'Все' },
-    { id: 'open', label: '🟡 Открытые' },
-    { id: 'closed', label: '✅ Закрытые' },
-    { id: 'day', label: '☀️ Дневные' },
-    { id: 'night', label: '🌙 Ночные' },
-  ].map(c => `<div class="filter-chip ${historyFilter===c.id?'active':''}" onclick="setFilter('${c.id}')">${c.label}</div>`).join('');
-  
-  const cards = filtered.map(s => shiftCard(s)).join('');
-  
-  screen.innerHTML = `
-    <div class="form-header">История смен</div>
-    <div class="filter-bar">${chips}</div>
-    ${cards || `<div class="empty"><div class="empty-icon">🔍</div><div class="empty-title">Нет смен</div><div class="empty-text">Попробуйте другой фильтр</div></div>`}
+  const s = document.getElementById('screen');
+  const filters=[{id:'all',l:'Все'},{id:'open',l:'🟡'},{id:'closed',l:'✅'},{id:'partial',l:'⚠️'},{id:'day',l:'☀️'},{id:'night',l:'🌙'}];
+  let filtered=SHIFTS;
+  if(FILTER==='open') filtered=SHIFTS.filter(s=>s.status==='open');
+  else if(FILTER==='closed') filtered=SHIFTS.filter(s=>s.status==='closed'||s.status==='partial');
+  else if(FILTER==='partial') filtered=SHIFTS.filter(s=>s.status==='partial');
+  else if(FILTER==='day') filtered=SHIFTS.filter(s=>s.shift_type==='day');
+  else if(FILTER==='night') filtered=SHIFTS.filter(s=>s.shift_type==='night');
+  s.innerHTML=`
+    <div class="fhdr">${t('history')}</div>
+    <div class="fbar">${filters.map(f=>`<div class="fchip ${FILTER===f.id?'on':''}" onclick="setFilter('${f.id}')">${f.l}</div>`).join('')}</div>
+    ${filtered.map(shiftCard).join('')||emptyState('🔍','Нет смен')}
   `;
 }
 
-function setFilter(f) {
-  hap('light');
-  historyFilter = f;
-  renderHistory();
-}
+function setFilter(f) { hap(); FILTER=f; renderHistory(); }
 
-// ─── PROFILE ───────────────────────────────────────────────────────────────
+// ── PROFILE ──────────────────────────────────────────────────────────
 function renderProfile() {
-  const screen = document.getElementById('screen');
-  const u = currentUser;
-  const totalShifts = shifts.length;
-  const totalM3 = Math.round(shifts.reduce((a,s) => a + (s.constructions||[]).reduce((b,c)=>b+(c.concrete_plan_m3||0),0), 0));
-  const confirmed = shifts.filter(s => s.status === 'closed').length;
-  const roleLabel = { admin: '👑 Администратор', supervisor: '🏗 Прораб', engineer: '👷 Инженер' }[u?.role] || 'Инженер';
-  const shiftLabel = u?.shift_type === 'night' ? '🌙 Ночная' : '☀️ Дневная';
-  
-  screen.innerHTML = `
-    <div class="profile-avatar">${(u?.name||'?')[0].toUpperCase()}</div>
-    <div class="profile-name">${u?.name || '—'}</div>
-    <div class="profile-role">${roleLabel} • ${shiftLabel} смена</div>
-    
-    <div class="stats-row">
-      <div class="stat-card"><div class="num">${totalShifts}</div><div class="lbl">Смен</div></div>
-      <div class="stat-card"><div class="num">${totalM3}</div><div class="lbl">м³</div></div>
-      <div class="stat-card"><div class="num">${confirmed}</div><div class="lbl">Подтверждено</div></div>
+  const s = document.getElementById('screen');
+  const u=USER;
+  const m3=Math.round(SHIFTS.reduce((a,s)=>a+(s.constructions||[]).reduce((b,c)=>b+(c.concrete_plan_m3||0),0),0));
+  const rl={admin:'👑 Администратор',supervisor:'🏗 Прораб',engineer:'👷 Инженер'}[u?.role]||'Инженер';
+  s.innerHTML=`
+    <div class="avatar">${(u?.name||'?')[0].toUpperCase()}</div>
+    <div class="pname">${u?.name||'—'}</div>
+    <div class="prole">${rl}</div>
+    <div class="stats3" style="padding:14px">
+      <div class="sc"><div class="n">${SHIFTS.length}</div><div class="l">Смен</div></div>
+      <div class="sc"><div class="n">${m3}</div><div class="l">м³</div></div>
+      <div class="sc"><div class="n">${SHIFTS.filter(s=>s.status==='closed').length}</div><div class="l">Закрытых</div></div>
     </div>
-    
-    <div class="section-title">Настройки</div>
-    <div class="form-section">
-      <div class="list-item">
-        <span class="list-item-icon">⏱</span>
-        <span class="list-item-label">Тип смены</span>
-        <div class="seg-control" style="max-width:160px">
-          <button class="seg-btn ${u?.shift_type==='day'?'active':''}" onclick="changeShiftType('day')">☀️</button>
-          <button class="seg-btn ${u?.shift_type==='night'?'active':''}" onclick="changeShiftType('night')">🌙</button>
+    <div class="section">Настройки</div>
+    <div class="fsec">
+      <div class="litem">
+        <span class="licon">🌐</span><span class="llbl">Язык</span>
+        <div class="seg" style="max-width:160px">
+          ${['ru','en','uz'].map(l=>`<button class="sbtn ${LANG===l?'on':''}" onclick="setLang('${l}')">${l.toUpperCase()}</button>`).join('')}
         </div>
       </div>
-      <div class="list-item">
-        <span class="list-item-icon">👤</span>
-        <span class="list-item-label">Telegram ID</span>
-        <span class="list-item-value">${u?.telegram_id || '—'}</span>
+      <div class="litem">
+        <span class="licon">⏱</span><span class="llbl">Тип смены</span>
+        <div class="seg" style="max-width:130px">
+          <button class="sbtn ${u?.shift_type==='day'?'on':''}" onclick="changeShiftType('day')">☀️</button>
+          <button class="sbtn ${u?.shift_type==='night'?'on':''}" onclick="changeShiftType('night')">🌙</button>
+        </div>
       </div>
-      <div class="list-item">
-        <span class="list-item-icon">🆔</span>
-        <span class="list-item-label">User ID</span>
-        <span class="list-item-value" style="font-size:11px">${u?.id?.slice(0,12) || '—'}</span>
-      </div>
+      <div class="litem"><span class="licon">👤</span><span class="llbl">Telegram ID</span><span class="lval">${u?.telegram_id||'—'}</span></div>
+    </div>
+    <div class="section">Справочники</div>
+    <div class="fsec">
+      <div class="litem" onclick="manageObjects()" style="cursor:pointer"><span class="licon">🏗</span><span class="llbl">Объекты и блоки</span><span class="lval">→</span></div>
+      <div class="litem" onclick="manageSupply()" style="cursor:pointer"><span class="licon">🚚</span><span class="llbl">Варианты подачи</span><span class="lval">→</span></div>
     </div>
     <div style="height:20px"></div>
   `;
@@ -1304,30 +1077,177 @@ function renderProfile() {
 
 async function changeShiftType(type) {
   hap('medium');
-  if (!currentUser?.id) return;
-  currentUser.shift_type = type;
-  await db.ref(`users/${currentUser.id}`).update({ shift_type: type });
+  USER.shift_type=type;
+  if(USER?.id) await db.ref(`users/${USER.id}`).update({shift_type:type});
   renderProfile();
 }
 
-// ─── REPORT ────────────────────────────────────────────────────────────────
-function downloadReport(shiftId) {
-  hap('light');
-  tg.showAlert('📄 Отчёт будет отправлен в чат ботом. Используйте команду /report ' + shiftId);
+function manageObjects() {
+  const items = OBJECTS.map(o=>`
+    <div style="padding:10px 0;border-bottom:1px solid rgba(0,0,0,.05)">
+      <div style="font-size:15px;font-weight:600">${o.name}</div>
+      <div style="font-size:12px;color:var(--hint);margin-top:3px">${(o.blocks||[]).join(', ')||'Нет блоков'}</div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="ua-btn ua-role" onclick="addBlockToObj('${o.id}','${o.name}')">+ Блок</button>
+        <button class="ua-btn ua-reject" onclick="deleteObject('${o.id}')">Удалить</button>
+      </div>
+    </div>`).join('');
+  showModal(`<div class="modal-title">🏗 Объекты</div>
+    ${items}
+    <button class="btn" style="margin-top:12px" onclick="addNewObject()">+ Новый объект</button>`);
 }
 
-function showReport() {
-  if (shifts.length === 0) {
-    tg.showAlert('Нет смен для отчёта');
-    return;
+function addBlockToObj(objId, objName) {
+  closeModal();
+  showModal(`<div class="modal-title">+ Блок для ${objName}</div>
+    <input class="modal-input" id="blk-inp" placeholder="Ramp2, Tower A...">
+    <button class="btn" onclick="saveBlock('${objId}')">Добавить</button>`);
+}
+
+async function saveBlock(objId) {
+  const val = document.getElementById('blk-inp')?.value?.trim();
+  if(!val) return;
+  const obj = OBJECTS.find(o=>o.id===objId);
+  if(obj) {
+    obj.blocks=[...(obj.blocks||[]),val];
+    await db.ref(`objects/${objId}/blocks`).set(obj.blocks);
   }
-  showShiftDetail(shifts[0].id);
+  closeModal(); tg.showAlert('Блок добавлен');
 }
 
-// ─── INIT ──────────────────────────────────────────────────────────────────
+function addNewObject() {
+  closeModal();
+  showModal(`<div class="modal-title">+ Новый объект</div>
+    <input class="modal-input" id="obj-inp" placeholder="East Tower...">
+    <button class="btn" onclick="saveNewObject()">Добавить</button>`);
+}
+
+async function saveNewObject() {
+  const val = document.getElementById('obj-inp')?.value?.trim();
+  if(!val) return;
+  const ref = await db.ref('objects').push({name:val,blocks:[],created_at:new Date().toISOString()});
+  OBJECTS.push({name:val,blocks:[],id:ref.key});
+  closeModal(); tg.showAlert('Объект добавлен');
+}
+
+async function deleteObject(objId) {
+  closeModal();
+  tg.showConfirm('Удалить объект?', async ok=>{
+    if(!ok) return;
+    await db.ref(`objects/${objId}`).remove();
+    OBJECTS=OBJECTS.filter(o=>o.id!==objId);
+    tg.showAlert('Удалено');
+  });
+}
+
+async function manageSupply() {
+  const snap = await db.ref('supply_options').once('value');
+  const opts=[...new Set([...SUPPLY_OPTIONS,...(snap.val()||[])])];
+  showModal(`<div class="modal-title">🚚 Варианты подачи</div>
+    ${opts.map(o=>`<div class="chip" style="margin:4px;display:inline-block">${o}</div>`).join('')}
+    <button class="btn" style="margin-top:14px" onclick="addSupplyOption()">+ Добавить</button>`);
+}
+
+function addSupplyOption() {
+  closeModal();
+  showModal(`<div class="modal-title">+ Вариант подачи</div>
+    <input class="modal-input" id="sup-inp" placeholder="бадья, скип...">
+    <button class="btn" onclick="saveNewSupply()">Добавить</button>`);
+}
+
+async function saveNewSupply() {
+  const val = document.getElementById('sup-inp')?.value?.trim();
+  if(!val) return;
+  await saveSupplyOption(val);
+  closeModal(); tg.showAlert('Добавлено');
+}
+
+// ── ADMIN ─────────────────────────────────────────────────────────────
+async function renderAdmin() {
+  const s = document.getElementById('screen');
+  const snap = await db.ref('users').once('value');
+  const allUsers = Object.entries(snap.val()||{}).map(([id,u])=>({...u,id}));
+  const pending = allUsers.filter(u=>!u.approved);
+  const approved = allUsers.filter(u=>u.approved);
+
+  const userCard = (u,isPending) => `
+    <div class="user-card">
+      <div class="user-av">${(u.name||'?')[0].toUpperCase()}</div>
+      <div class="user-info">
+        <div class="user-name">${u.name||'—'}</div>
+        <div class="user-meta">${u.role||'engineer'} • @${u.username||'—'}</div>
+      </div>
+      <div class="user-actions">
+        ${isPending?`
+          <button class="ua-btn ua-approve" onclick="approveUser('${u.id}')">${t('approve')}</button>
+          <button class="ua-btn ua-reject" onclick="rejectUser('${u.id}')">${t('reject')}</button>
+        `:`
+          <select class="ua-btn ua-role" onchange="changeRole('${u.id}',this.value)" style="cursor:pointer">
+            ${['engineer','supervisor','admin'].map(r=>`<option ${u.role===r?'selected':''}>${r}</option>`).join('')}
+          </select>
+        `}
+      </div>
+    </div>`;
+
+  s.innerHTML = `
+    <div class="fhdr">👑 Администратор</div>
+    ${pending.length?`<div class="section">⏳ Ожидают доступа (${pending.length})</div>${pending.map(u=>userCard(u,true)).join('')}`:''}
+    <div class="section">✅ Пользователи (${approved.length})</div>
+    ${approved.map(u=>userCard(u,false)).join('')}
+    <div class="section">Объекты</div>
+    <div class="fsec">
+      ${OBJECTS.map(o=>`<div class="litem"><span class="licon">🏗</span><span class="llbl">${o.name}</span><span class="lval">${(o.blocks||[]).length} блоков</span></div>`).join('')}
+    </div>
+    <button class="btn" onclick="manageObjects()" style="margin-top:4px">Управление объектами</button>
+    <div style="height:20px"></div>
+  `;
+}
+
+async function approveUser(uid) {
+  hap('medium');
+  await db.ref(`users/${uid}`).update({approved:true});
+  tg.showAlert('Пользователь одобрен');
+  renderAdmin();
+}
+
+async function rejectUser(uid) {
+  tg.showConfirm('Удалить пользователя?', async ok=>{
+    if(!ok) return;
+    await db.ref(`users/${uid}`).remove();
+    renderAdmin();
+  });
+}
+
+async function changeRole(uid, role) {
+  await db.ref(`users/${uid}`).update({role});
+  hap();
+}
+
+// ── REPORT ───────────────────────────────────────────────────────────
+function downloadReport(shiftId) {
+  tg.showAlert('📄 Отчёт будет отправлен в чат. Используйте /report ' + shiftId);
+}
+
+// ── MODAL ─────────────────────────────────────────────────────────────
+function showModal(content) {
+  const existing = document.getElementById('modal-overlay');
+  if(existing) existing.remove();
+  const div = document.createElement('div');
+  div.className='modal-overlay'; div.id='modal-overlay';
+  div.innerHTML=`<div class="modal">${content}<button class="btn sec" style="margin-top:8px" onclick="closeModal()">✕ Закрыть</button></div>`;
+  div.addEventListener('click',e=>{if(e.target===div)closeModal();});
+  document.body.appendChild(div);
+}
+
+function closeModal() {
+  const el=document.getElementById('modal-overlay');
+  if(el) el.remove();
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────
 async function init() {
   renderNav();
-  document.getElementById('screen').innerHTML = '<div class="loading"><div class="spinner"></div><span>Инициализация...</span></div>';
+  document.getElementById('screen').innerHTML='<div class="loading"><div class="spin"></div></div>';
   await loadUser();
   await render();
 }
